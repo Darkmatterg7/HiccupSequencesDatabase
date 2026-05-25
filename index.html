@@ -1,0 +1,2477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hiccup Sequence Explorer</title>
+  <meta name="description" content="An interactive mathematical exploration tool for Benoit Cloitre's family of self-referential integer hiccup sequences studied by Fokkink and Joshi (2026).">
+  
+  <!-- Typography & Styling -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
+
+  <style>
+    /* Theme Variables & Design Tokens */
+    :root {
+      --bg: #0b0e14;
+      --bg-alt: #111622;
+      --panel-bg: rgba(20, 26, 38, 0.75);
+      --border-color: rgba(232, 168, 56, 0.15);
+      --border-focus: rgba(232, 168, 56, 0.45);
+      --accent: #e8a838;
+      --accent-hover: #f2be65;
+      --accent-muted: rgba(232, 168, 56, 0.1);
+      --accent-glow: rgba(232, 168, 56, 0.25);
+      --teal: #3caea3;
+      --teal-muted: rgba(60, 174, 163, 0.1);
+      --teal-glow: rgba(60, 174, 163, 0.25);
+      --text: #f0f2f5;
+      --text-muted: #8a99ad;
+      --danger: #ef4444;
+      --danger-bg: rgba(239, 68, 68, 0.1);
+      --success: #10b981;
+      --success-bg: rgba(16, 185, 129, 0.1);
+      --success-border: rgba(16, 185, 129, 0.3);
+      --card-radius: 12px;
+      
+      --font-serif: 'EB Garamond', serif;
+      --font-sans: 'Inter', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    /* Reset & Base Rules */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      /* Delicate Scientific Graph Paper Background Overlay */
+      background-image: 
+        radial-gradient(var(--border-color) 1.5px, transparent 1.5px),
+        linear-gradient(rgba(232, 168, 56, 0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(232, 168, 56, 0.015) 1px, transparent 1px);
+      background-size: 24px 24px, 48px 48px, 48px 48px;
+      background-position: 0 0, 0 0, 0 0;
+      padding: 2rem 1rem;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--accent);
+    }
+
+    /* Typography */
+    h1, h2, h3, h4 {
+      font-family: var(--font-serif);
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+      transition: color 0.2s ease;
+    }
+    a:hover {
+      color: var(--accent-hover);
+      text-decoration: underline;
+    }
+
+    /* Layout Containers */
+    .container {
+      max-width: 1100px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2.5rem;
+    }
+
+    /* Vintage Journal Header */
+    header {
+      text-align: center;
+      border-bottom: 2px double var(--border-color);
+      padding-bottom: 1.5rem;
+      margin-bottom: 0.5rem;
+      position: relative;
+    }
+
+    .header-journal-stamp {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.25em;
+      margin-bottom: 0.5rem;
+    }
+
+    header h1 {
+      font-size: 2.8rem;
+      color: var(--accent);
+      line-height: 1.1;
+      margin-bottom: 0.5rem;
+      text-shadow: 0 0 10px rgba(232, 168, 56, 0.15);
+    }
+
+    header p {
+      font-size: 1.1rem;
+      font-style: italic;
+      color: var(--text-muted);
+      max-width: 700px;
+      margin: 0 auto;
+      font-family: var(--font-serif);
+    }
+
+    .info-btn {
+      position: absolute;
+      top: 0;
+      right: 0;
+      background: var(--accent-muted);
+      border: 1px solid var(--border-color);
+      color: var(--accent);
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-family: var(--font-serif);
+      font-size: 1.2rem;
+      font-weight: bold;
+      transition: all 0.25s ease;
+    }
+    .info-btn:hover {
+      background: var(--accent);
+      color: var(--bg);
+      box-shadow: 0 0 12px var(--accent-glow);
+      transform: scale(1.05);
+    }
+
+    /* Core Card Panels (Scientific Sheets) */
+    .journal-section {
+      background: var(--panel-bg);
+      border: 1px solid var(--border-color);
+      border-radius: var(--card-radius);
+      padding: 2rem;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      position: relative;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    .journal-section:hover {
+      border-color: rgba(232, 168, 56, 0.25);
+    }
+
+    .section-title {
+      font-size: 1.8rem;
+      color: var(--accent);
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .section-title svg {
+      width: 24px;
+      height: 24px;
+      fill: currentColor;
+    }
+
+    /* Forms & Inputs */
+    .form-group {
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .input-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      font-family: var(--font-sans);
+    }
+
+    .input-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: -0.25rem;
+      font-style: italic;
+    }
+
+    textarea, input[type="text"], input[type="number"] {
+      background: rgba(10, 14, 22, 0.8);
+      border: 1px solid var(--border-color);
+      color: var(--text);
+      font-family: var(--font-mono);
+      font-size: 1rem;
+      padding: 0.8rem 1rem;
+      border-radius: 6px;
+      outline: none;
+      width: 100%;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    textarea:focus, input[type="text"]:focus, input[type="number"]:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 100px;
+    }
+
+    /* Grid of inputs for generator */
+    .param-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 768px) {
+      .param-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (max-width: 480px) {
+      .param-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .invalid-border {
+      border-color: var(--danger) !important;
+    }
+
+    /* Buttons */
+    .btn {
+      background: var(--accent-muted);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-family: var(--font-sans);
+      font-weight: 600;
+      font-size: 0.95rem;
+      padding: 0.75rem 1.75rem;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      letter-spacing: 0.02em;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: var(--accent);
+      color: var(--bg);
+      box-shadow: 0 0 15px var(--accent-glow);
+      transform: translateY(-1px);
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    .btn:disabled {
+      border-color: var(--border-color);
+      color: var(--text-muted);
+      background: transparent;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border-color: var(--text-muted);
+      color: var(--text);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: var(--text);
+      color: var(--text);
+      box-shadow: none;
+    }
+
+    /* Loader */
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Sequence Grid Term Display */
+    .terms-display {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 0.75rem;
+      margin: 1.5rem 0;
+    }
+
+    .term-badge {
+      background: rgba(15, 20, 30, 0.9);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 0.6rem;
+      text-align: center;
+      font-family: var(--font-mono);
+      position: relative;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(8px);
+      animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      animation-delay: calc(var(--i) * 35ms);
+    }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .term-badge .index {
+      position: absolute;
+      top: 2px;
+      left: 4px;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+    }
+
+    .term-badge .val {
+      font-size: 1.15rem;
+      font-weight: 500;
+      margin-top: 0.4rem;
+      display: block;
+    }
+
+    /* Step Color Schemes */
+    .term-badge.step-y {
+      border-color: var(--accent);
+      background: linear-gradient(135deg, rgba(232, 168, 56, 0.1) 0%, rgba(15, 20, 30, 0.9) 100%);
+      box-shadow: inset 0 0 6px rgba(232, 168, 56, 0.08);
+    }
+    .term-badge.step-y .val {
+      color: var(--accent);
+    }
+
+    .term-badge.step-z {
+      border-color: var(--teal);
+      background: linear-gradient(135deg, rgba(60, 174, 163, 0.1) 0%, rgba(15, 20, 30, 0.9) 100%);
+      box-shadow: inset 0 0 6px rgba(60, 174, 163, 0.08);
+    }
+    .term-badge.step-z .val {
+      color: var(--teal);
+    }
+
+    /* Rhythm Difference Pill Strip */
+    .rhythm-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin: 1rem 0;
+      padding: 0.75rem;
+      background: rgba(10, 14, 22, 0.6);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+    }
+
+    .rhythm-pill {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.25rem 0.6rem;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .rhythm-pill.y-gap {
+      background: var(--accent-muted);
+      border-color: rgba(232, 168, 56, 0.3);
+      color: var(--accent);
+    }
+    .rhythm-pill.z-gap {
+      background: var(--teal-muted);
+      border-color: rgba(60, 174, 163, 0.3);
+      color: var(--teal);
+    }
+
+    /* Interactive Status Indicators & Info Cards */
+    .results-container {
+      margin-top: 1.5rem;
+      animation: fadeIn 0.5s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .alert-panel {
+      border-radius: var(--card-radius);
+      padding: 1.5rem;
+      border: 1px solid transparent;
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .alert-panel.danger {
+      background: var(--danger-bg);
+      border-color: rgba(239, 68, 68, 0.25);
+    }
+    .alert-panel.danger h4 {
+      color: var(--danger);
+      font-family: var(--font-sans);
+      font-weight: 600;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .alert-panel.success {
+      background: var(--success-bg);
+      border-color: var(--success-border);
+    }
+    .alert-panel.success h4 {
+      color: var(--success);
+      font-family: var(--font-sans);
+      font-weight: 600;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .alert-panel p {
+      font-size: 0.95rem;
+    }
+
+    .alert-panel .tip {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      background: rgba(0,0,0,0.2);
+      padding: 0.6rem 0.8rem;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      overflow-x: auto;
+    }
+
+    /* Database Match Info Cards (Case C) */
+    .match-card {
+      background: linear-gradient(180deg, rgba(20, 26, 38, 0.95) 0%, rgba(12, 16, 24, 0.95) 100%);
+      border: 2px solid var(--accent);
+      border-radius: var(--card-radius);
+      padding: 2rem;
+      box-shadow: 0 12px 40px var(--accent-glow);
+      margin-bottom: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      transition: all 0.3s ease;
+    }
+
+    .match-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      border-bottom: 1px dashed var(--border-color);
+      padding-bottom: 1rem;
+    }
+
+    @media (max-width: 600px) {
+      .match-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+
+    .match-title {
+      font-size: 1.9rem;
+      color: var(--accent);
+    }
+
+    .oeis-badge {
+      background: var(--accent);
+      color: var(--bg);
+      font-family: var(--font-mono);
+      font-weight: 700;
+      padding: 0.35rem 0.75rem;
+      border-radius: 4px;
+      font-size: 1rem;
+      letter-spacing: 0.05em;
+      box-shadow: 0 0 10px var(--accent-glow);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+    .oeis-badge:hover {
+      background: var(--accent-hover);
+      text-decoration: none;
+      color: var(--bg);
+    }
+
+    .param-pillbox {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .param-pill {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border-color);
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-family: var(--font-mono);
+    }
+    .param-pill span {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .match-description {
+      font-size: 1.02rem;
+      line-height: 1.6;
+      color: #dfe2e6;
+    }
+
+    /* Math Formulas Stylized Box */
+    .math-formula-box {
+      background: rgba(10, 14, 22, 0.8);
+      border: 1px solid var(--border-color);
+      border-left: 3px solid var(--accent);
+      padding: 1rem 1.25rem;
+      border-radius: 0 6px 6px 0;
+      font-family: var(--font-serif);
+      font-size: 1.15rem;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .math-formula-box .label {
+      font-family: var(--font-sans);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+    }
+    .math-formula-box .formula {
+      font-family: var(--font-mono);
+      font-size: 1rem;
+      color: var(--accent);
+    }
+
+    .card-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    /* Reference Table Styles */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--border-color);
+      border-radius: var(--card-radius);
+      background: rgba(10, 14, 22, 0.4);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+      text-align: left;
+    }
+
+    th, td {
+      padding: 0.9rem 1.1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+      background: rgba(20, 26, 38, 0.8);
+      font-family: var(--font-sans);
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: rgba(232, 168, 56, 0.02);
+    }
+
+    .ref-btn-row {
+      margin-bottom: 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .search-filter-grid {
+      display: flex;
+      gap: 0.75rem;
+      width: 100%;
+      flex-wrap: wrap;
+    }
+
+    .search-input-box {
+      flex: 2;
+      min-width: 200px;
+    }
+
+    .filter-select-box {
+      flex: 1;
+      min-width: 150px;
+      position: relative;
+    }
+
+    select {
+      background: rgba(10, 14, 22, 0.8);
+      border: 1px solid var(--border-color);
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+      padding: 0.8rem 1rem;
+      border-radius: 6px;
+      outline: none;
+      width: 100%;
+      cursor: pointer;
+      appearance: none;
+      transition: border-color 0.25s ease;
+    }
+    select:focus {
+      border-color: var(--border-focus);
+    }
+
+    .filter-select-box::after {
+      content: "▼";
+      font-size: 0.65rem;
+      position: absolute;
+      right: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      color: var(--text-muted);
+    }
+
+    /* Explanation Help Modal Details */
+    dialog {
+      background: linear-gradient(180deg, var(--bg-alt) 0%, var(--bg) 100%);
+      border: 1px solid var(--accent);
+      border-radius: var(--card-radius);
+      color: var(--text);
+      max-width: 650px;
+      width: 90%;
+      margin: auto;
+      padding: 2.2rem;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+      outline: none;
+    }
+
+    dialog::backdrop {
+      background: rgba(5, 7, 10, 0.85);
+      backdrop-filter: blur(5px);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px dashed var(--border-color);
+      padding-bottom: 0.75rem;
+    }
+
+    .modal-close-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.5rem;
+      transition: color 0.2s ease;
+    }
+    .modal-close-btn:hover {
+      color: var(--accent);
+    }
+
+    .modal-content {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      max-height: 70vh;
+      overflow-y: auto;
+      padding-right: 0.5rem;
+    }
+
+    .modal-block {
+      background: rgba(0,0,0,0.2);
+      border: 1px solid rgba(255,255,255,0.03);
+      padding: 1rem;
+      border-radius: 6px;
+    }
+
+    /* Math layout inside modal */
+    .math-definition {
+      font-family: var(--font-serif);
+      font-size: 1.15rem;
+      text-align: center;
+      margin: 1rem 0;
+      line-height: 1.4;
+    }
+    .math-block-line {
+      display: block;
+      margin: 0.4rem 0;
+    }
+
+    /* Footer & Citations */
+    footer {
+      text-align: center;
+      margin-top: 3rem;
+      padding: 2rem 0;
+      border-top: 1px solid var(--border-color);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      font-family: var(--font-sans);
+    }
+
+    .citation-box {
+      font-style: italic;
+      font-family: var(--font-serif);
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      max-width: 800px;
+      margin: 0.5rem auto 0;
+    }
+
+    /* Utility classes */
+    .char-counter {
+      text-align: right;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: -0.25rem;
+    }
+    .warning-label {
+      color: var(--accent);
+      font-size: 0.85rem;
+      margin-top: 0.25rem;
+      display: block;
+      font-weight: 500;
+    }
+
+    .mt-4 { margin-top: 1rem; }
+    .mr-2 { margin-right: 0.5rem; }
+    .mb-2 { margin-bottom: 0.5rem; }
+
+    /* Custom animated collapsing reference table container */
+    .collapsible-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+      opacity: 0;
+    }
+
+    .collapsible-content.expanded {
+      max-height: 1500px;
+      opacity: 1;
+    }
+
+    .toggle-trigger-btn {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(232, 168, 56, 0.05);
+      border: 1px solid var(--border-color);
+      color: var(--accent);
+      padding: 1rem 1.5rem;
+      border-radius: var(--card-radius);
+      cursor: pointer;
+      font-family: var(--font-serif);
+      font-size: 1.3rem;
+      font-weight: 500;
+      transition: all 0.25s ease;
+    }
+    
+    .toggle-trigger-btn:hover {
+      background: rgba(232, 168, 56, 0.08);
+      border-color: var(--accent);
+    }
+
+    .toggle-trigger-btn .icon {
+      font-size: 0.9rem;
+      transition: transform 0.3s ease;
+    }
+
+    .toggle-trigger-btn.active .icon {
+      transform: rotate(180deg);
+    }
+
+    /* Plotter Visualizer Styles */
+    .plotter-card {
+      background: rgba(10, 14, 22, 0.65);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-top: 1.5rem;
+      backdrop-filter: blur(4px);
+    }
+
+    .plotter-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      border-bottom: 1px dashed var(--border-color);
+      padding-bottom: 0.75rem;
+    }
+
+    @media (max-width: 600px) {
+      .plotter-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+      }
+    }
+
+    .plotter-tabs {
+      display: flex;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 2px;
+    }
+
+    .plot-tab {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.4rem 0.8rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      outline: none;
+    }
+
+    .plot-tab:hover {
+      color: var(--text);
+    }
+
+    .plot-tab.active {
+      background: var(--accent);
+      color: var(--bg);
+      box-shadow: 0 0 6px var(--accent-glow);
+    }
+
+    .plotter-canvas-wrapper {
+      position: relative;
+      width: 100%;
+      overflow-x: auto;
+      background: rgba(5, 7, 10, 0.6);
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.03);
+      padding: 0.5rem 0;
+    }
+
+    #sequence-plot {
+      display: block;
+      min-width: 650px;
+      margin: 0 auto;
+      max-width: 100%;
+    }
+
+    .plotter-stats {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      border-top: 1px dashed var(--border-color);
+      padding-top: 0.75rem;
+    }
+
+    .plotter-stats span strong {
+      color: var(--accent);
+    }
+
+    .plotter-stats .stat-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    /* ── Definition Block ── */
+    .definition-block {
+      border-color: rgba(232, 168, 56, 0.25);
+    }
+
+    .def-intro {
+      font-size: 1rem;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+      font-family: var(--font-serif);
+      font-size: 1.05rem;
+      line-height: 1.7;
+    }
+    .def-intro code {
+      font-family: var(--font-mono);
+      font-size: 0.9em;
+      color: var(--accent);
+    }
+
+    .def-constraints {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .def-constraints span {
+      background: var(--accent-muted);
+      border: 1px solid rgba(232, 168, 56, 0.25);
+      border-radius: 6px;
+      padding: 0.3rem 0.9rem;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      color: var(--accent);
+    }
+    .def-constraints code { font-family: inherit; }
+
+    .def-rule-box {
+      background: rgba(5, 8, 14, 0.7);
+      border: 1px solid var(--border-color);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 8px 8px 0;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1.25rem;
+      font-family: var(--font-mono);
+    }
+    .def-rule-line {
+      font-size: 1rem;
+      margin-bottom: 0.85rem;
+      color: var(--text);
+    }
+    .def-rule-line code { color: var(--accent); font-family: inherit; }
+    .def-rule-piecewise {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .def-brace {
+      font-size: 2.8rem;
+      line-height: 1;
+      color: var(--accent);
+      font-weight: 300;
+      align-self: center;
+    }
+    .def-cases {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .def-case {
+      display: flex;
+      align-items: baseline;
+      gap: 1rem;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+    .def-case code { color: var(--accent); font-family: inherit; min-width: 140px; }
+    .def-condition {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+    }
+    .def-condition code { color: var(--teal); font-family: var(--font-mono); }
+    .def-for {
+      margin-left: auto;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      align-self: center;
+      white-space: nowrap;
+    }
+
+    .def-plain {
+      font-family: var(--font-serif);
+      font-size: 1rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+      margin-bottom: 1.5rem;
+    }
+    .def-plain code {
+      font-family: var(--font-mono);
+      font-size: 0.88em;
+      color: var(--accent);
+    }
+
+    .def-param-table {
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+    }
+    .def-param-row {
+      display: grid;
+      grid-template-columns: 80px 1fr;
+      gap: 1rem;
+      padding: 0.65rem 1.1rem;
+      border-bottom: 1px solid var(--border-color);
+      align-items: baseline;
+    }
+    .def-param-row:last-child { border-bottom: none; }
+    .def-param-row.header-row {
+      background: rgba(232, 168, 56, 0.06);
+      font-family: var(--font-sans);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+    .def-param-row code {
+      font-family: var(--font-mono);
+      color: var(--accent);
+      font-size: 1em;
+    }
+    .def-param-row em { color: var(--teal); font-style: normal; font-weight: 600; }
+
+    .def-example {
+      margin-bottom: 1.75rem;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .def-example summary {
+      padding: 0.85rem 1.1rem;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--accent);
+      background: rgba(232, 168, 56, 0.05);
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background 0.2s ease;
+      user-select: none;
+    }
+    .def-example summary::-webkit-details-marker { display: none; }
+    .def-example summary::before {
+      content: "▶";
+      font-size: 0.65rem;
+      transition: transform 0.25s ease;
+    }
+    .def-example[open] summary::before { transform: rotate(90deg); }
+    .def-example summary:hover { background: rgba(232, 168, 56, 0.1); }
+
+    .def-example-body {
+      padding: 1rem 1.25rem;
+      background: rgba(5, 8, 14, 0.5);
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .def-example-line {
+      font-family: var(--font-mono);
+      font-size: 0.87rem;
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .def-example-line code { font-family: inherit; color: var(--text-muted); }
+    .tag-y {
+      background: var(--accent-muted);
+      border: 1px solid rgba(232, 168, 56, 0.35);
+      color: var(--accent);
+      padding: 0.1rem 0.45rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+    .tag-z {
+      background: var(--teal-muted);
+      border: 1px solid rgba(60, 174, 163, 0.35);
+      color: var(--teal);
+      padding: 0.1rem 0.45rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+    .def-example-result {
+      margin-top: 0.6rem;
+      padding-top: 0.6rem;
+      border-top: 1px dashed var(--border-color);
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      color: var(--accent);
+    }
+
+    .def-generate-divider {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 0.25rem 0 1.5rem;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      font-family: var(--font-sans);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    .def-generate-divider::before,
+    .def-generate-divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--border-color);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- HEADER -->
+    <header>
+      <div class="header-journal-stamp">CLOITRE SEQUENCES • MATHEMATICA VINTAGE</div>
+      <h1 id="main-title">Hiccup Sequence Explorer</h1>
+      <p>Identify and generate self-referential integer sequences from Cloitre's OEIS family</p>
+      
+      <button class="info-btn" onclick="openHelpModal()" aria-label="Explain Hiccup Sequences" title="Explain Hiccup Sequences">?</button>
+    </header>
+
+    <!-- DEFINITION BLOCK -->
+    <section class="journal-section definition-block" aria-label="Definition">
+      <h2 class="section-title" style="margin-bottom:1.25rem;">
+        <svg viewBox="0 0 24 24"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"/></svg>
+        Definition
+      </h2>
+
+      <p class="def-intro">
+        A <strong>(j, x, y, z)-hiccup sequence</strong> is a strictly increasing sequence of integers <code>a(n)</code>.
+      </p>
+
+      <div class="def-constraints">
+        <span><code>j, x ∈ ℤ<sub>≥0</sub></code></span>
+        <span><code>y, z ∈ ℤ<sub>≥1</sub></code></span>
+        <span><code>y ≠ z</code></span>
+      </div>
+
+      <div class="def-rule-box">
+        <div class="def-rule-line"><code>a(1) = x</code></div>
+        <div class="def-rule-piecewise">
+          <div class="def-brace">{</div>
+          <div class="def-cases">
+            <div class="def-case"><code>a(n−1) + y</code><span class="def-condition">if <code>(n − j) ∈ {a(k) : k &lt; n}</code></span></div>
+            <div class="def-case"><code>a(n−1) + z</code><span class="def-condition">otherwise</span></div>
+          </div>
+          <div class="def-for">for n ≥ 2</div>
+        </div>
+      </div>
+
+      <details class="def-example">
+        <summary>Parameter Meanings</summary>
+        <div class="def-param-table" style="border:none; border-radius:0; margin-bottom:0;">
+          <div class="def-param-row">
+            <span><code>j</code></span>
+            <span>Lookback offset — check if current index <code>n</code> (j=0) or previous <code>n−1</code> (j=1) is in the sequence so far</span>
+          </div>
+          <div class="def-param-row">
+            <span><code>x</code></span>
+            <span>Starting value — the first term of the sequence</span>
+          </div>
+          <div class="def-param-row">
+            <span><code>y</code></span>
+            <span>Gap added when <code>n−j</code> <em>is</em> in the sequence</span>
+          </div>
+          <div class="def-param-row">
+            <span><code>z</code></span>
+            <span>Gap added when <code>n−j</code> is <em>not</em> in the sequence</span>
+          </div>
+        </div>
+      </details>
+
+      <details class="def-example">
+        <summary>Worked Example — A086398 &nbsp;<code style="font-size:0.85rem;">(j=1, x=1, y=4, z=2)</code></summary>
+        <div class="def-example-body">
+          <div class="def-example-line"><code>a(1) = 1</code></div>
+          <div class="def-example-line"><code>a(2):</code> check if (2−1)=<strong>1</strong> ∈ {1} → <span class="tag-y">YES</span> → a(2) = 1+4 = <strong>5</strong></div>
+          <div class="def-example-line"><code>a(3):</code> check if (3−1)=<strong>2</strong> ∈ {1,5} → <span class="tag-z">NO</span> → a(3) = 5+2 = <strong>7</strong></div>
+          <div class="def-example-line"><code>a(4):</code> check if (4−1)=<strong>3</strong> ∈ {1,5,7} → <span class="tag-z">NO</span> → a(4) = 7+2 = <strong>9</strong></div>
+          <div class="def-example-line"><code>a(5):</code> check if (5−1)=<strong>4</strong> ∈ {1,5,7,9} → <span class="tag-z">NO</span> → a(5) = 9+2 = <strong>11</strong></div>
+          <div class="def-example-line"><code>a(6):</code> check if (6−1)=<strong>5</strong> ∈ {1,5,7,9,11} → <span class="tag-y">YES</span> → a(6) = 11+4 = <strong>15</strong></div>
+          <div class="def-example-result">Sequence: 1, 5, 7, 9, 11, 15, 17, 21, 23, 27, 29, 33, 35, 37, 39, 43, …</div>
+        </div>
+      </details>
+
+      <!-- Quick-generate inputs -->
+      <div class="def-generate-divider">
+        <span>Try it — generate a sequence</span>
+      </div>
+
+      <div class="param-grid">
+        <div class="form-group">
+          <label for="def-param-j" class="input-label">Lookback Offset (j)</label>
+          <span class="input-desc">Range: 0–5</span>
+          <input type="number" id="def-param-j" value="0" min="0" max="5" oninput="syncDefParams()">
+        </div>
+        <div class="form-group">
+          <label for="def-param-x" class="input-label">Starting Value (x)</label>
+          <span class="input-desc">Range: 0–100</span>
+          <input type="number" id="def-param-x" value="1" min="0" max="100" oninput="syncDefParams()">
+        </div>
+        <div class="form-group">
+          <label for="def-param-y" class="input-label">Gap if in sequence (y)</label>
+          <span class="input-desc">Range: 1–20</span>
+          <input type="number" id="def-param-y" value="2" min="1" max="20" oninput="syncDefParams()">
+        </div>
+        <div class="form-group">
+          <label for="def-param-z" class="input-label">Gap if not in sequence (z)</label>
+          <span class="input-desc">Range: 1–20</span>
+          <input type="number" id="def-param-z" value="3" min="1" max="20" oninput="syncDefParams()">
+        </div>
+      </div>
+
+      <button class="btn" onclick="runFromDef()">Generate Sequence</button>
+    </section>
+
+    <!-- SECTION 1 — IDENTIFY AN UNKNOWN SEQUENCE -->
+    <section class="journal-section" aria-labelledby="section1-title">
+      <h2 id="section1-title" class="section-title">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/></svg>
+        Identify a Sequence
+      </h2>
+      
+      <div class="form-group">
+        <label for="sequence-input" class="input-label">Sequence Terms</label>
+        <span class="input-desc">Input comma or space-separated terms to validate and match against the database</span>
+        <textarea id="sequence-input" placeholder="Enter terms, e.g.: 1, 5, 7, 9, 11, 15, 17, 21, 23, 27, 29, 33" oninput="handleInputTextChange()"></textarea>
+        
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span id="input-warning" class="warning-label"></span>
+          <span id="char-counter" class="char-counter">0 terms entered</span>
+        </div>
+      </div>
+
+      <button id="analyse-btn" class="btn" onclick="runAnalysis()">
+        Analyse Sequence
+      </button>
+
+      <!-- Section 1 Results display -->
+      <div id="analysis-results" class="results-container" style="display: none;"></div>
+    </section>
+
+    <!-- SECTION 2 — GENERATE SEQUENCE FROM PARAMETERS -->
+    <section class="journal-section" id="generator-section" aria-labelledby="section2-title">
+      <h2 id="section2-title" class="section-title">
+        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+        Generate from Parameters
+      </h2>
+
+      <div class="param-grid">
+        <div class="form-group">
+          <label for="param-j" class="input-label">Lookback Offset (j)</label>
+          <span class="input-desc">Range: 0–5</span>
+          <input type="number" id="param-j" value="0" min="0" max="5" oninput="validateParamsLive()">
+        </div>
+
+        <div class="form-group">
+          <label for="param-x" class="input-label">Starting Value (x)</label>
+          <span class="input-desc">Range: 0–100</span>
+          <input type="number" id="param-x" value="1" min="0" max="100" oninput="validateParamsLive()">
+        </div>
+
+        <div class="form-group">
+          <label for="param-y" class="input-label">Gap if in sequence (y)</label>
+          <span class="input-desc">Range: 1–20</span>
+          <input type="number" id="param-y" value="2" min="1" max="20" oninput="validateParamsLive()">
+        </div>
+
+        <div class="form-group">
+          <label for="param-z" class="input-label">Gap if not in sequence (z)</label>
+          <span class="input-desc">Range: 1–20</span>
+          <input type="number" id="param-z" value="3" min="1" max="20" oninput="validateParamsLive()">
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <span id="param-warning" class="warning-label"></span>
+        <span class="input-desc">Constraint: <strong>y ≠ z required</strong></span>
+      </div>
+
+      <button id="generate-btn" class="btn" onclick="runGenerator()">
+        Generate Sequence
+      </button>
+
+      <!-- Section 2 Results display -->
+      <div id="generator-results" class="results-container" style="display: none;"></div>
+    </section>
+
+    <!-- SECTION 3 — REFERENCE DATABASE TABLE (hidden) -->
+    <!--
+    <section class="journal-section" aria-labelledby="section3-title">
+      <button class="toggle-trigger-btn" id="table-toggle-btn" onclick="toggleReferenceTable()">
+        <span>Browse all known hiccup sequences (Tables 1 & 3)</span>
+        <span class="icon">▼</span>
+      </button>
+      
+      <div id="table-collapsible" class="collapsible-content">
+        <div style="margin-top: 1.5rem;">
+          
+          <div class="ref-btn-row">
+            <div class="search-filter-grid">
+              <div class="search-input-box">
+                <input type="text" id="db-search" placeholder="Search OEIS, Name, or parameters (e.g. j=1)" oninput="filterReferenceTable()">
+              </div>
+              <div class="filter-select-box">
+                <select id="db-filter" onchange="filterReferenceTable()">
+                  <option value="all">All Sequences</option>
+                  <option value="beatty">Beatty Candidates (|y-z|=1)</option>
+                  <option value="nonbeatty">Non-Beatty Candidates</option>
+                  <option value="j0">Lookback offset j=0</option>
+                  <option value="j1">Lookback offset j=1</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table id="seq-table">
+              <thead>
+                <tr>
+                  <th>OEIS</th>
+                  <th style="text-align:center;">j</th>
+                  <th style="text-align:center;">x</th>
+                  <th style="text-align:center;">y</th>
+                  <th style="text-align:center;">z</th>
+                  <th>Name / Properties</th>
+                  <th style="text-align:center;">Beatty?</th>
+                  <th style="text-align:center;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="table-body">
+              </tbody>
+            </table>
+          </div>
+          
+        </div>
+      </div>
+    </section>
+    -->
+
+    <!-- FOOTER -->
+    <footer>
+      <div>Hiccup Sequence Explorer &copy; 2026. Made with pair programming.</div>
+      <div class="citation-box">
+        Based on: Fokkink, R. & Joshi, G. (2026). On Cloitre's hiccup sequences. The Ramanujan Journal, 69:40. 
+        <a href="https://doi.org/10.1007/s11139-025-01305-1" target="_blank" rel="noopener noreferrer">DOI: 10.1007/s11139-025-01305-1</a>
+      </div>
+      <div>
+        Sequence database compiled from initial OEIS entries discovered by Benoit Cloitre (2003) and others. 
+        Explore more sequences directly on the <a href="https://oeis.org" target="_blank" rel="noopener noreferrer">On-Line Encyclopedia of Integer Sequences</a>.
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- HELP / DEFINITION MODAL DIALOG -->
+  <dialog id="help-modal">
+    <div class="modal-header">
+      <h3 style="font-size:1.6rem; color:var(--accent);">About Hiccup Sequences</h3>
+      <button class="modal-close-btn" onclick="closeHelpModal()">&times;</button>
+    </div>
+    <div class="modal-content">
+      <p>A <strong>(j, x, y, z)-hiccup sequence</strong> is a strictly increasing sequence of positive integers <code>a(n)</code> introduced in 2003 by Benoit Cloitre and formally solved in 2026 by Fokkink and Joshi.</p>
+      
+      <div class="modal-block">
+        <h4 style="color:var(--accent); font-family:var(--font-sans); font-size:0.9rem; margin-bottom:0.4rem; text-transform:uppercase;">Formal Definition</h4>
+        <div class="math-definition">
+          <span class="math-block-line">a(1) = x</span>
+          <span class="math-block-line">
+            a(n) = 
+            <span style="font-size:2.5rem; vertical-align:middle; line-height:0;">{</span>
+            <span style="display:inline-block; text-align:left; vertical-align:middle; font-size:0.95rem;">
+              a(n−1) + y, &nbsp;&nbsp; if (n − j) &in; { a(k) : k &lt; n }<br>
+              a(n−1) + z, &nbsp;&nbsp; otherwise
+            </span>
+          </span>
+          <span class="math-block-line" style="font-size:0.8rem; color:var(--text-muted); margin-top:0.4rem;">for n &ge; 2, where j, x &ge; 0 and y, z &ge; 1 (y &ne; z)</span>
+        </div>
+      </div>
+
+      <p><strong>Lookback Offset (j):</strong> Defines how many positions to look back. For <code>j = 0</code>, we check if the current index <code>n</code> is present in the sequence generated so far. For <code>j = 1</code>, we check if the previous term <code>n - 1</code> was present.</p>
+      
+      <div class="modal-block">
+        <h4 style="color:var(--accent); font-family:var(--font-sans); font-size:0.9rem; margin-bottom:0.4rem; text-transform:uppercase;">Worked Example: A086398 (j=1, x=1, y=4, z=2)</h4>
+        <div style="font-family:var(--font-mono); font-size:0.85rem; line-height:1.4;">
+          a(1) = 1<br>
+          a(2): (2-1) = 1 &in; {1} &rarr; YES. Add y (+4) &rarr; a(2) = 1+4 = 5<br>
+          a(3): (3-1) = 2 &in; {1,5} &rarr; NO. Add z (+2) &rarr; a(3) = 5+2 = 7<br>
+          a(4): (4-1) = 3 &in; {1,5,7} &rarr; NO. Add z (+2) &rarr; a(4) = 7+2 = 9<br>
+          a(5): (5-1) = 4 &in; {1,5,7,9} &rarr; NO. Add z (+2) &rarr; a(5) = 9+2 = 11<br>
+          a(6): (6-1) = 5 &in; {1,5,7,9,11} &rarr; YES. Add y (+4) &rarr; a(6) = 11+4 = 15<br>
+          Sequence: 1, 5, 7, 9, 11, 15, 17, 21, 23, 27, 29, 33, ...
+        </div>
+      </div>
+
+      <p><strong>Mathematical Significance:</strong> When the gap values satisfy <code>|y - z| = 1</code>, the sequences can often be written as <strong>Beatty Sequences</strong> of the form <code>⌊n·&alpha; + &beta;⌋</code> for some irrational slope <code>&alpha;</code>. For sequences where <code>|y - z| &gt; 1</code>, they are generated by substitutions/morphisms, reflecting highly structured fractals that are automatic or morphic.</p>
+      
+      <p style="font-size:0.85rem; color:var(--text-muted); border-top:1px dashed var(--border-color); padding-top:0.75rem;">
+        Citations: Fokkink and Joshi (2026) solved the self-referential sequences mathematically, proving long-standing conjectures (such as those by Clark Kimberling) and mapping translation lemmas (Lemma 9) that shift index behaviors dynamically.
+      </p>
+    </div>
+  </dialog>
+
+  <!-- JAVASCRIPT LOGIC & DATABASE -->
+  <script>
+    /* Complete 27-entry Database with Slopes & Conjecture Bounds */
+    const seqDatabase = [
+      { oeis: "A004956", j: 0, x: 2, y: 2, z: 1, name: "Beatty sequence related to sqrt(2)", beatty: true, formula: "⌊n·√2⌋", slope: Math.sqrt(2), description: "This Beatty sequence is closely related to the square root of 2. It represents the floor of n multiplied by the square root of 2, offset slightly. It displays a highly regular Beatty pattern where differences are either 1 or 2, reflecting the irrationality of √2." },
+      { oeis: "A007066", j: 0, x: 1, y: 2, z: 3, name: "Upper Wythoff sequence + 2 (approx)", beatty: true, formula: "⌊(n-1)·φ² + 1⌋", phi: true, slope: (1 + Math.sqrt(5)) / 2 + 1, morphism: "0 → 010, 1 → 10", description: "Related to the Upper Wythoff sequence: equals A001950 + 2 (except for the first term). Has the closed form ⌊(n−1)·φ² + 1⌋. Generated by the morphism 0 → 010, 1 → 10, the fixed point starting with 1." },
+      { oeis: "A045412", j: 0, x: 3, y: 1, z: 3, name: "A045412", beatty: false, description: "A self-referential sequence defined by Benoit Cloitre in 2003. Since y=1 and z=3, the differences take values 1 and 3, meaning the gaps are not consecutive, so it cannot form a standard Beatty sequence. Its structure shows highly complex self-referential patterns." },
+      { oeis: "A064437", j: 0, x: 1, y: 3, z: 2, name: "Beatty Sequence A064437", beatty: true, formula: "⌊1 + (√2)(n−1) + 1/(2+√2)⌋", slope: 1 + Math.sqrt(2), description: "Robert Israel empirically discovered a closed Beatty formula: ⌊1 + (√2)(n−1) + 1/(2+√2)⌋. A non-homogeneous Beatty sequence with slope 1+√2 and a non-trivial offset. A081840 equals this sequence plus one." },
+      { oeis: "A080578", j: 0, x: 1, y: 1, z: 3, name: "A080578 — morphic but NOT automatic", beatty: false, description: "Notably, this is a morphic sequence that is NOT k-automatic for any k. It is Example 16 in the survey by Allouche, Shallit, and Yassawi (2022) 'How to prove that a sequence is not automatic.' The generating morphism is not primitive (its adjacency matrix restricted to {0,1} is not primitive when y = 1)." },
+      { oeis: "A080579", j: 0, x: 1, y: 1, z: 4, name: "A080579", beatty: false, description: "A (0,1,1,4)-hiccup sequence defined by Benoit Cloitre in the OEIS in 2003. Its differences alternate between 1 and 4. Since |y-z| = 3, it does not represent a Beatty sequence, instead developing a fascinating morphic structure with wider gaps." },
+      { oeis: "A080580", j: 0, x: 1, y: 2, z: 4, name: "A080580", beatty: false, description: "A (0,1,2,4)-hiccup sequence. It generates terms starting at 1, adding 2 if the lookback n is in the sequence, and 4 otherwise. This results in a sequence of entirely odd numbers after the first few terms, showing a distinctive modular behavior." },
+      { oeis: "A080590", j: 0, x: 1, y: 3, z: 4, name: "A080590", beatty: true, slope: 3.447, description: "A Beatty sequence candidate with gap values 3 and 4. Because |3 - 4| = 1, its differences are consecutive, meaning it can be represented as a Beatty sequence with a slope between 3 and 4. It exhibits a beautiful periodic lookback behavior." },
+      { oeis: "A080600", j: 0, x: 4, y: 4, z: 3, name: "A080600", beatty: true, slope: 3.447, description: "Starting at 4, this (0,4,4,3)-hiccup sequence uses consecutive differences of 4 and 3. As a result, it constitutes a Beatty sequence. It has a beautiful, highly symmetric lookback grid and exhibits deep structure under modulo operations." },
+      { oeis: "A080652", j: 0, x: 2, y: 3, z: 2, name: "A080652 (= A086377 + 1)", beatty: true, slope: 1 + Math.sqrt(2), description: "This Beatty sequence is exactly equal to the BDS sequence (A086377) offset by a constant +1. It demonstrates how lookbacks with starting index variations map directly to one another by translations." },
+      { oeis: "A080667", j: 0, x: 3, y: 4, z: 3, name: "A080667", beatty: true, slope: 3.447, description: "A (0,3,4,3)-hiccup sequence with start value 3. Because the gap difference is 1, this forms a Beatty sequence. It exhibits a rhythmic pulse of differences [+4] and [+3] that can be analyzed as a Sturmian word." },
+      { oeis: "A080903", j: 0, x: 1, y: 4, z: 2, name: "A080903", beatty: false, description: "A (0,1,4,2)-hiccup sequence. It starts with 1 and has gaps of 4 and 2. Because the gap difference is 2, it is not a Beatty sequence. It displays a complex self-referential tree under analysis." },
+      { oeis: "A081834", j: 0, x: 1, y: 4, z: 3, name: "A081834", beatty: true, slope: 3.447, description: "A Beatty sequence candidate starting at 1, with lookback offset 0 and gaps 4 and 3. It generates an elegant sequence of integers whose first differences represent a Sturmian sequence over the alphabet {3, 4}." },
+      { oeis: "A081835", j: 0, x: 1, y: 5, z: 4, name: "A081835", beatty: true, slope: 4.445, description: "A (0,1,5,4)-hiccup sequence. The gaps are 5 and 4. Since |5 - 4| = 1, it forms a Beatty sequence of slope slightly above 4, exhibiting typical non-homogeneous Beatty characteristics." },
+      { oeis: "A081839", j: 0, x: 0, y: 4, z: 5, name: "A081839", beatty: true, slope: 4.445, description: "Starting at 0, this sequence generates terms using lookback j=0 and gaps 4 and 5. It is a Beatty sequence that maps neatly to a digital straight line of slope roughly 4.45." },
+      { oeis: "A081840", j: 0, x: 0, y: 3, z: 4, name: "A081840 (= A064437 + 1)", beatty: true, slope: 1 + Math.sqrt(2), description: "This sequence is exactly equal to Robert Israel's sequence (A064437) offset by +1. This illustrates translation symmetries in the hiccup family, where different initial terms yield isomorphic gap patterns." },
+      { oeis: "A081841", j: 0, x: 0, y: 3, z: 2, name: "A081841", beatty: true, slope: 2.414, description: "A (0,0,3,2)-hiccup sequence starting at 0. Gaps are 3 and 2. Since their difference is 1, it constitutes a Beatty sequence. It has a highly regular repeating rhythm of differences." },
+      { oeis: "A081842", j: 0, x: 0, y: 4, z: 3, name: "A081842", beatty: true, slope: 3.414, description: "Starting at 0 with gaps of 4 and 3. A Beatty sequence whose terms are closely approximated by a linear equation with slope related to the silver ratio." },
+      { oeis: "A081843", j: 0, x: 0, y: 5, z: 4, name: "A081843", beatty: true, slope: 4.414, description: "A (0,0,5,4)-hiccup sequence. Since the gaps are 5 and 4, it is a Beatty sequence. It exhibits a beautiful, dense lookback structure." },
+      { oeis: "A086377", j: 1, x: 1, y: 3, z: 2, name: "A086377 — The BDS Sequence", beatty: true, formula: "⌊(1+√2)n − √2/2⌋", slope: 1 + Math.sqrt(2), morphism: "0 → 10, 1 → 100", description: "The star of the Bosma–Dekking–Steiner theorem (Integers, 2018). This (1,1,3,2)-hiccup sequence has four equivalent characterizations: recursive hiccup definition, positions of 1 in the fixed point of 0→10, 1→100, the Beatty sequence ⌊(1+√2)n − √2/2⌋, and an iterated function sequence starting from 4/π via Lambert's continued fraction. That a sequence from π equals a Beatty sequence with slope 1+√2 was verified numerically over 130,000 terms before being proved." },
+      { oeis: "A086398", j: 1, x: 1, y: 4, z: 2, name: "A086398 (Kimberling's sequence)", beatty: false, slope: 1 + Math.sqrt(3), bounds: [-1, 4], boundsName: "Kimberling Conjecture: -1 < n(1+√3) - a(n) < 4", morphism: "0 → 10, 1 → 1000", note: "All terms odd; Kimberling conjectured −1 < n(1+√3) − a(n) < 4", description: "A (1,1,4,2)-hiccup sequence where all terms are odd. Kimberling conjectured that −1 < n(1+√3) − a(n) < 4. The sequence is the fixed point of 0 → 10, 1 → 1000 (morphic but not a Beatty sequence). By Lemma 9 of Fokkink–Joshi, it is a translate of A284753." },
+      { oeis: "A000201", j: 1, x: 1, y: 2, z: 1, name: "Lower Wythoff sequence", beatty: true, formula: "⌊n·φ⌋", phi: true, slope: (1 + Math.sqrt(5)) / 2, description: "The positions of the letter 'n' in Wythoff's game — a two-pile Nim variant. Defined as ⌊n·φ⌋ where φ = (1+√5)/2 ≈ 1.618 is the golden ratio. Together with A001950 (Upper Wythoff), it forms a partition of the positive integers. As a (1,1,2,1)-hiccup sequence it reflects a deep connection between self-referential definitions and Beatty sequences." },
+      { oeis: "A001950", j: 1, x: 2, y: 2, z: 3, name: "Upper Wythoff sequence", beatty: true, formula: "⌊n·φ²⌋", phi: true, slope: (1 + Math.sqrt(5)) / 2 + 1, morphism: "0 → 010, 1 → 01 (reverse)", description: "The complement of the Lower Wythoff sequence, partitioning the naturals alongside A000201. Defined as ⌊n·φ²⌋. Appears in Wythoff's game theory and is a (1,2,2,3)-hiccup sequence, generated by the reversal of the morphism 0 → 010, 1 → 01." },
+      { oeis: "A003156", j: 1, x: 1, y: 3, z: 1, name: "A003156", beatty: false, description: "A (1,1,3,1)-hiccup sequence. It starts with 1 and uses lookback j=1. Since y=3 and z=1, it is not a Beatty sequence. It exhibits a beautiful and complex fractal substitution pattern." },
+      { oeis: "A026352", j: 1, x: 1, y: 2, z: 3, name: "A026352", beatty: false, description: "A (1,1,2,3)-hiccup sequence. Despite having consecutive gaps 2 and 3, it is NOT a Beatty sequence because it fails the homogeneous distribution due to the j=1 lookback parameters. It highlights the subtle boundary between Beatty and morphic sequences." },
+      { oeis: "A026356", j: 0, x: 2, y: 2, z: 3, name: "A026356 (= A007066 except first term)", beatty: true, slope: (1 + Math.sqrt(5)) / 2 + 1, description: "This sequence is exactly equal to A007066 except for the very first term, where it starts at 2 instead of 1. It forms a Beatty sequence of slope φ², demonstrating how initial perturbations in the starting term propagate in the lookback dynamics." },
+      { oeis: "A284753", j: 0, x: 2, y: 4, z: 2, name: "A284753 (= 2 × A026363)", beatty: false, slope: 1 + Math.sqrt(3), bounds: [-2, 3], boundsName: "Fokkink-Joshi Theorem (2026): -2 < n(1+√3) - a(n) < 3", note: "Kimberling conjectured −2 < (1+√3)n − a(n) < 3, proved by Fokkink–Joshi 2026", description: "A relatively recent OEIS addition proved to equal 2 × A026363. Fokkink and Joshi (2026) proved Kimberling's conjecture −2 < (1+√3)n − a(n) < 3 using the Walnut automatic theorem prover and a Dumont–Thomas numeration system for the morphism 0 → 01, 1 → 0001. Its numeration base satisfies the linear recurrence Bₙ₊₁ = 2Bₙ + 2Bₙ₋₁." }
+    ];
+
+    /* --- MATH ALGORITHMS --- */
+
+    // Generate a (j, x, y, z)-hiccup sequence of n terms
+    function generateHiccup(j, x, y, z, n = 50) {
+      const seq = [x];
+      const seqSet = new Set([x]);
+      const steps = [null]; // steps[idx] = 'y' or 'z' for seq[idx]
+
+      for (let idx = 1; idx < n; idx++) {
+        const n_val = idx + 1; // 1-indexed position
+        const check = n_val - j;
+        const usesY = seqSet.has(check);
+        const next = seq[idx - 1] + (usesY ? y : z);
+        seq.push(next);
+        seqSet.add(next);
+        steps.push(usesY ? 'y' : 'z');
+      }
+      return { seq, steps };
+    }
+
+    // Validate input sequence as a hiccup sequence
+    function validateHiccup(inputSeq) {
+      if (inputSeq.length < 3) return { valid: false, reason: "Too few terms (minimum 3 required)" };
+
+      // Check strictly increasing
+      for (let i = 1; i < inputSeq.length; i++) {
+        if (inputSeq[i] <= inputSeq[i-1]) {
+          return { 
+            valid: false, 
+            reason: `Sequence is not strictly increasing: term ${inputSeq[i]} at index ${i+1} is &le; previous term ${inputSeq[i-1]}.` 
+          };
+        }
+      }
+
+      // Compute differences
+      const diffs = [];
+      for (let i = 1; i < inputSeq.length; i++) {
+        diffs.push(inputSeq[i] - inputSeq[i-1]);
+      }
+
+      const diffSet = [...new Set(diffs)];
+      if (diffSet.length !== 2) {
+        return {
+          valid: false,
+          reason: `Differences must take exactly 2 distinct values. Found ${diffSet.length} distinct gaps: [${diffSet.sort((a,b)=>a-b).join(', ')}]`,
+          diffs: diffs
+        };
+      }
+
+      const [y_cand, z_cand] = diffSet.sort((a,b) => a-b);
+      const x_cand = inputSeq[0];
+
+      // Try j = 0, 1, 2, 3
+      for (let j = 0; j <= 3; j++) {
+        for (const [y, z] of [[y_cand, z_cand], [z_cand, y_cand]]) {
+          const { seq } = generateHiccup(j, x_cand, y, z, inputSeq.length);
+          if (seq.every((v, i) => v === inputSeq[i])) {
+            return { valid: true, j, x: x_cand, y, z, diffs: diffs };
+          }
+        }
+      }
+
+      return {
+        valid: false,
+        reason: `Differences take exactly 2 values (${y_cand} and ${z_cand}) but no consistent lookback rule matches for j &in; {0,1,2,3}.`,
+        diffs: diffs
+      };
+    }
+
+    // Match parameters against known database
+    function matchDatabase(j, x, y, z, seq, db) {
+      // 1. Exact parameter match
+      const exactParam = db.find(e => e.j === j && e.x === x && e.y === y && e.z === z);
+      if (exactParam) return { matchType: 'exact', entry: exactParam };
+
+      // 2. Sequence-term match (generate each db entry and compare)
+      for (const entry of db) {
+        const { seq: dbSeq } = generateHiccup(entry.j, entry.x, entry.y, entry.z, seq.length);
+        if (dbSeq.every((v, i) => v === seq[i])) {
+          return { matchType: 'exact', entry };
+        }
+        
+        // 3. Offset match (seq = dbSeq + c)
+        if (seq.length >= 5) {
+          const offset = seq[0] - dbSeq[0];
+          if (dbSeq.every((v, i) => v + offset === seq[i])) {
+            return { matchType: 'translate', entry, offset };
+          }
+        }
+
+        // 4. Scale match (seq = k * dbSeq)
+        if (seq.length >= 5) {
+          const k = seq[0] / dbSeq[0];
+          if (Number.isInteger(k) && k > 0) {
+            if (dbSeq.every((v, i) => v * k === seq[i])) {
+              return { matchType: 'scale', entry, scale: k };
+            }
+          }
+        }
+      }
+      return null;
+    }
+
+    let currentGeneratedData = null; // Stores { seq, steps, entry, j, x, y, z }
+    let currentPlotMode = 'growth'; // 'growth' or 'residual'
+
+    // Linear regression model fitting
+    function fitLinearRegression(seq) {
+      const N = seq.length;
+      let sumX = 0;
+      let sumY = 0;
+      let sumXY = 0;
+      let sumXX = 0;
+      let sumYY = 0;
+
+      for (let i = 0; i < N; i++) {
+        const x = i + 1; // 1-indexed n
+        const y = seq[i];
+        sumX += x;
+        sumY += y;
+        sumXY += x * y;
+        sumXX += x * x;
+        sumYY += y * y;
+      }
+
+      const slope = (N * sumXY - sumX * sumY) / (N * sumXX - sumX * sumX);
+      const intercept = (sumY - slope * sumX) / N;
+
+      // Correlation coefficient (r^2)
+      const numerator = (N * sumXY - sumX * sumY);
+      const denominator = Math.sqrt((N * sumXX - sumX * sumX) * (N * sumYY - sumY * sumY));
+      const r2 = denominator === 0 ? 1 : Math.pow(numerator / denominator, 2);
+
+      return { slope, intercept, r2 };
+    }
+
+    // Interactive canvas plotting engine
+    function drawSequenceChart() {
+      if (!currentGeneratedData) return;
+
+      const { seq, steps, entry } = currentGeneratedData;
+      const canvas = document.getElementById('sequence-plot');
+      if (!canvas) return;
+
+      const ctx = canvas.getContext('2d');
+      const width = canvas.width;
+      const height = canvas.height;
+
+      // Clear and baseline layout
+      ctx.clearRect(0, 0, width, height);
+
+      // Margins
+      const margin = { top: 35, right: 35, bottom: 45, left: 60 };
+      const plotWidth = width - margin.left - margin.right;
+      const plotHeight = height - margin.top - margin.bottom;
+
+      // Math calculations
+      const regression = fitLinearRegression(seq);
+      
+      // Determine what to plot based on currentPlotMode
+      let yData = [];
+      let boundsLines = null; // Horizontal boundaries [lower, upper]
+
+      if (currentPlotMode === 'growth') {
+        // Convergence ratio: a(n) / n (Growth Constant convergence)
+        yData = seq.map((val, i) => val / (i + 1));
+      } else {
+        // Sturmian Residuals mode
+        // Determine slope to use
+        let slope = regression.slope;
+        
+        if (entry && entry.slope) {
+          slope = entry.slope;
+        }
+
+        for (let i = 0; i < seq.length; i++) {
+          const n = i + 1;
+          // Standard conjecture format uses (n * slope - term) for Kimberling,
+          // otherwise let's use (term - n * slope) so residuals oscillate around 0/baseline
+          if (entry && entry.bounds) {
+            yData.push(n * slope - seq[i]);
+          } else {
+            yData.push(seq[i] - n * slope);
+          }
+        }
+
+        if (entry && entry.bounds) {
+          boundsLines = entry.bounds; // e.g. [-1, 4]
+        }
+      }
+
+      // Find min & max
+      const xMin = 1;
+      const xMax = seq.length;
+      let yMin = Math.min(...yData);
+      let yMax = Math.max(...yData);
+
+      // Add soft padding
+      let yRange = yMax - yMin;
+      if (yRange === 0) yRange = 1;
+      const yPadding = yRange * 0.15;
+      yMin -= yPadding;
+      yMax += yPadding;
+
+      // Scaling helper functions
+      function mapX(xVal) {
+        return margin.left + ((xVal - xMin) / (xMax - xMin)) * plotWidth;
+      }
+      function mapY(yVal) {
+        return margin.top + plotHeight - ((yVal - yMin) / (yMax - yMin)) * plotHeight;
+      }
+
+      // Draw Grid Paper Backing (Vintage graph paper style)
+      ctx.strokeStyle = 'rgba(232, 168, 56, 0.04)';
+      ctx.lineWidth = 1;
+      
+      // Draw vertical grids
+      const xTicks = 10;
+      for (let i = 0; i <= xTicks; i++) {
+        const xVal = xMin + (i / xTicks) * (xMax - xMin);
+        const xPos = mapX(xVal);
+        ctx.beginPath();
+        ctx.moveTo(xPos, margin.top);
+        ctx.lineTo(xPos, margin.top + plotHeight);
+        ctx.stroke();
+      }
+
+      // Draw horizontal grids
+      const yTicks = 6;
+      for (let i = 0; i <= yTicks; i++) {
+        const yVal = yMin + (i / yTicks) * (yRange);
+        const yPos = mapY(yVal);
+        ctx.beginPath();
+        ctx.moveTo(margin.left, yPos);
+        ctx.lineTo(margin.left + plotWidth, yPos);
+        ctx.stroke();
+      }
+
+      // Draw Axes Lines
+      ctx.strokeStyle = 'rgba(232, 168, 56, 0.2)';
+      ctx.lineWidth = 1.5;
+      
+      // Left vertical axis
+      ctx.beginPath();
+      ctx.moveTo(margin.left, margin.top);
+      ctx.lineTo(margin.left, margin.top + plotHeight);
+      ctx.stroke();
+      
+      // Bottom horizontal axis
+      ctx.beginPath();
+      ctx.moveTo(margin.left, margin.top + plotHeight);
+      ctx.lineTo(margin.left + plotWidth, margin.top + plotHeight);
+      ctx.stroke();
+
+      // Axis Ticks & Numbers
+      ctx.fillStyle = 'rgba(138, 153, 173, 0.8)';
+      ctx.font = '10px "JetBrains Mono", "Fira Code", monospace';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+
+      // Y-axis labels
+      for (let i = 0; i <= yTicks; i++) {
+        const yVal = yMin + (i / yTicks) * (yRange);
+        const yPos = mapY(yVal);
+        ctx.beginPath();
+        ctx.moveTo(margin.left - 5, yPos);
+        ctx.lineTo(margin.left, yPos);
+        ctx.stroke();
+        ctx.fillText(yVal.toFixed(1), margin.left - 10, yPos);
+      }
+
+      // X-axis labels
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      const xLabelsCount = 5;
+      for (let i = 0; i <= xLabelsCount; i++) {
+        const xVal = Math.round(xMin + (i / xLabelsCount) * (xMax - xMin));
+        const xPos = mapX(xVal);
+        ctx.beginPath();
+        ctx.moveTo(xPos, margin.top + plotHeight);
+        ctx.lineTo(xPos, margin.top + plotHeight + 5);
+        ctx.stroke();
+        ctx.fillText(`n=${xVal}`, xPos, margin.top + plotHeight + 10);
+      }
+
+      // Draw Bounding Conjecture Lines if Residual Mode and sequence has bounds
+      if (currentPlotMode === 'residual' && boundsLines) {
+        ctx.lineWidth = 1;
+        
+        boundsLines.forEach((boundVal, index) => {
+          const yPos = mapY(boundVal);
+          
+          // Draw dashed line
+          ctx.strokeStyle = 'rgba(239, 68, 68, 0.45)'; // warning red-orange
+          ctx.setLineDash([5, 5]);
+          ctx.beginPath();
+          ctx.moveTo(margin.left, yPos);
+          ctx.lineTo(margin.left + plotWidth, yPos);
+          ctx.stroke();
+          ctx.setLineDash([]); // Reset
+          
+          // Draw bounds text
+          ctx.fillStyle = 'rgba(239, 68, 68, 0.7)';
+          ctx.font = '9px "Inter", sans-serif';
+          ctx.textAlign = 'left';
+          ctx.fillText(
+            `${index === 0 ? 'Lower' : 'Upper'} Bound (${boundVal >= 0 ? '+' : ''}${boundVal})`, 
+            margin.left + 10, 
+            index === 0 ? yPos - 6 : yPos + 6
+          );
+        });
+      }
+
+      // Draw Trendline/Baseline
+      ctx.lineWidth = 1;
+      if (currentPlotMode === 'growth') {
+        // Draw regression line of best fit
+        ctx.strokeStyle = 'rgba(232, 168, 56, 0.2)';
+        ctx.beginPath();
+        ctx.moveTo(mapX(xMin), mapY(regression.slope * xMin + regression.intercept));
+        ctx.lineTo(mapX(xMax), mapY(regression.slope * xMax + regression.intercept));
+        ctx.stroke();
+      } else {
+        // Draw baseline center at y = 0
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(margin.left, mapY(0));
+        ctx.lineTo(margin.left + plotWidth, mapY(0));
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      // Draw Main Data Line connecting points
+      ctx.strokeStyle = currentPlotMode === 'growth' ? 'rgba(232, 168, 56, 0.45)' : 'rgba(60, 174, 163, 0.45)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (let i = 0; i < seq.length; i++) {
+        const px = mapX(i + 1);
+        const py = mapY(yData[i]);
+        if (i === 0) {
+          ctx.moveTo(px, py);
+        } else {
+          ctx.lineTo(px, py);
+        }
+      }
+      ctx.stroke();
+
+      // Draw glowing node dots for each term
+      for (let i = 0; i < seq.length; i++) {
+        const px = mapX(i + 1);
+        const py = mapY(yData[i]);
+        const usesY = steps[i] === 'y';
+
+        ctx.fillStyle = usesY ? '#e8a838' : '#3caea3';
+        
+        // Add subtle shadow glow
+        ctx.shadowBlur = 4;
+        ctx.shadowColor = usesY ? 'rgba(232, 168, 56, 0.8)' : 'rgba(60, 174, 163, 0.8)';
+        
+        ctx.beginPath();
+        ctx.arc(px, py, 4, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // Draw a inner core dot
+        ctx.shadowBlur = 0; // Reset blur
+        ctx.fillStyle = '#0b0e14';
+        ctx.beginPath();
+        ctx.arc(px, py, 1.5, 0, 2 * Math.PI);
+        ctx.fill();
+      }
+
+      // Render stats overlay
+      const statsPanel = document.getElementById('plotter-stats');
+      if (statsPanel) {
+        let statsHtml = `
+          <span class="stat-item">Best-Fit Slope (m): <strong>${regression.slope.toFixed(4)}</strong></span>
+          <span class="stat-item">Y-Intercept (c): <strong>${regression.intercept.toFixed(2)}</strong></span>
+          <span class="stat-item">Correlation (R²): <strong>${regression.r2.toFixed(4)}</strong></span>
+        `;
+        
+        if (currentPlotMode === 'residual') {
+          let baselineSource = "Linear Regression Fit";
+          if (entry && entry.slope) {
+            baselineSource = `Exact Slope of ${entry.oeis}`;
+          }
+          statsHtml += `
+            <span class="stat-item" style="color:var(--teal);">Residual Base: <strong>${baselineSource}</strong></span>
+          `;
+          if (entry && entry.bounds) {
+            statsHtml += `
+              <span class="stat-item" style="color:var(--danger); width:100%; border-top:1px dashed var(--border-color); padding-top:0.4rem; margin-top:0.4rem;">
+                Bounds: <strong>${entry.boundsName}</strong>
+              </span>
+            `;
+          }
+        }
+        statsPanel.innerHTML = statsHtml;
+      }
+    }
+
+    // Change visualizer mode
+    function setPlotMode(mode) {
+      currentPlotMode = mode;
+      
+      // Update tab classes
+      const tabs = document.querySelectorAll('.plot-tab');
+      tabs.forEach(tab => {
+        if (tab.innerText.toLowerCase().includes(mode)) {
+          tab.classList.add('active');
+        } else {
+          tab.classList.remove('active');
+        }
+      });
+
+      drawSequenceChart();
+    }
+
+    /* --- UI CONTROLLERS --- */
+
+    // Load reference table list at page load
+    window.onload = function() {
+      renderReferenceTable(seqDatabase);
+    };
+
+    // Open & Close Explanatory Dialog Modal
+    function openHelpModal() {
+      document.getElementById('help-modal').showModal();
+    }
+
+    function closeHelpModal() {
+      document.getElementById('help-modal').close();
+    }
+
+    // Live parameter validators for input constraints in Section 2
+    function validateParamsLive() {
+      const y = parseInt(document.getElementById('param-y').value);
+      const z = parseInt(document.getElementById('param-z').value);
+      const j = parseInt(document.getElementById('param-j').value);
+      const x = parseInt(document.getElementById('param-x').value);
+      const warn = document.getElementById('param-warning');
+      const yInput = document.getElementById('param-y');
+      const zInput = document.getElementById('param-z');
+
+      let isValid = true;
+      let msg = "";
+
+      if (isNaN(y) || y < 1) {
+        isValid = false;
+        msg = "Gap y must be &ge; 1";
+      } else if (isNaN(z) || z < 1) {
+        isValid = false;
+        msg = "Gap z must be &ge; 1";
+      } else if (isNaN(j) || j < 0) {
+        isValid = false;
+        msg = "Lookback offset j must be &ge; 0";
+      } else if (isNaN(x) || x < 0) {
+        isValid = false;
+        msg = "Starting value x must be &ge; 0";
+      } else if (y === z) {
+        isValid = false;
+        msg = "Constraint violated: Gap y and gap z must differ (y &ne; z)";
+        yInput.classList.add('invalid-border');
+        zInput.classList.add('invalid-border');
+      }
+
+      if (isValid) {
+        warn.innerHTML = "";
+        yInput.classList.remove('invalid-border');
+        zInput.classList.remove('invalid-border');
+        document.getElementById('generate-btn').disabled = false;
+      } else {
+        warn.innerHTML = msg;
+        document.getElementById('generate-btn').disabled = true;
+      }
+    }
+
+    // Live text parsed count for Section 1 Input
+    function handleInputTextChange() {
+      const inputVal = document.getElementById('sequence-input').value;
+      const terms = parseInputSequence(inputVal);
+      const counter = document.getElementById('char-counter');
+      const warn = document.getElementById('input-warning');
+
+      if (terms.length === 0) {
+        counter.innerText = "0 terms entered";
+        warn.innerHTML = "";
+        return;
+      }
+
+      counter.innerText = `${terms.length} term${terms.length > 1 ? 's' : ''} entered`;
+
+      if (terms.length < 8) {
+        warn.innerHTML = "&#9888; Minimum 8 terms recommended for meaningful validation.";
+      } else {
+        warn.innerHTML = "";
+      }
+    }
+
+    // Parses spaces or commas separated integers
+    function parseInputSequence(str) {
+      if (!str.trim()) return [];
+      return str
+        .replace(/,/g, ' ')
+        .split(/\s+/)
+        .filter(t => t.trim() !== '')
+        .map(Number)
+        .filter(n => !isNaN(n) && Number.isInteger(n));
+    }
+
+    // Renders the color-coded terms grid
+    function makeTermsGridHtml(seq, steps) {
+      let html = `<div class="terms-display">`;
+      for (let i = 0; i < seq.length; i++) {
+        const stepClass = steps[i] === 'y' ? 'step-y' : steps[i] === 'z' ? 'step-z' : '';
+        html += `
+          <div class="term-badge ${stepClass}" style="--i: ${i};">
+            <span class="index">a(${i+1})</span>
+            <span class="val">${seq[i]}</span>
+          </div>
+        `;
+      }
+      html += `</div>`;
+      return html;
+    }
+
+    // Renders the horizontal flex differences rhythm strip
+    function makeRhythmStripHtml(diffs, y, z) {
+      let html = `<div class="rhythm-strip">`;
+      for (let i = 0; i < diffs.length; i++) {
+        const diffVal = diffs[i];
+        if (diffVal === y) {
+          html += `<span class="rhythm-pill y-gap">+${y}</span>`;
+        } else if (diffVal === z) {
+          html += `<span class="rhythm-pill z-gap">+${z}</span>`;
+        } else {
+          html += `<span class="rhythm-pill" style="background:rgba(255,255,255,0.05); color:var(--text-muted); border-color:var(--border-color);">+${diffVal}</span>`;
+        }
+      }
+      html += `</div>`;
+      return html;
+    }
+
+    // Creates the Info Card markup for Case C (Match) and Case B (Valid No Match)
+    function buildMatchCardHtml(j, x, y, z, seq, matchResult) {
+      const allTermsQuery = seq.join(',');
+      const oeisSearchUrl = `https://oeis.org/search?q=${allTermsQuery}&language=english`;
+
+      if (matchResult) {
+        const { matchType, entry, offset, scale } = matchResult;
+        let titleModifier = "";
+        let badgeUrl = `https://oeis.org/${entry.oeis}`;
+        
+        if (matchType === 'translate') {
+          titleModifier = ` (Shifted by +${offset})`;
+        } else if (matchType === 'scale') {
+          titleModifier = ` (Scaled by &times;${scale})`;
+        }
+
+        let propertiesHtml = "";
+        if (entry.beatty) {
+          propertiesHtml += `
+            <div class="math-formula-box">
+              <span class="label">Beatty Closed-Form Formula</span>
+              <span class="formula">${entry.formula || '⌊n · α + β⌋'}</span>
+            </div>
+          `;
+        }
+        if (entry.morphism) {
+          propertiesHtml += `
+            <div class="math-formula-box">
+              <span class="label">Generating Morphism Rules</span>
+              <span class="formula">&sigma;: ${entry.morphism}</span>
+            </div>
+          `;
+        }
+
+        let footnote = "";
+        if (entry.note) {
+          footnote = `
+            <div style="font-size:0.9rem; color:var(--accent); font-family:var(--font-serif); border-top:1px dashed var(--border-color); padding-top:0.75rem;">
+              <strong>Properties & Conjecture Notes:</strong> ${entry.note}
+            </div>
+          `;
+        }
+
+        return `
+          <div class="match-card">
+            <div class="match-header">
+              <div>
+                <h3 class="match-title">${entry.name}${titleModifier}</h3>
+                <div class="param-pillbox mt-4">
+                  <span class="param-pill">j = <span>${j}</span></span>
+                  <span class="param-pill">x = <span>${x}</span></span>
+                  <span class="param-pill">y = <span>${y}</span></span>
+                  <span class="param-pill">z = <span>${z}</span></span>
+                </div>
+              </div>
+              <a href="${badgeUrl}" target="_blank" rel="noopener noreferrer" class="oeis-badge" title="View sequence on OEIS">
+                ${entry.oeis} ↗
+              </a>
+            </div>
+            
+            <p class="match-description">${entry.description || 'A highly structured member of Benoit Cloitre\'s self-referential family.'}</p>
+            
+            ${propertiesHtml}
+            ${footnote}
+
+            <div class="card-actions">
+              <a href="${oeisSearchUrl}" target="_blank" rel="noopener noreferrer" class="btn" style="text-decoration:none;" title="Search OEIS with generated terms">
+                View on OEIS ↗
+              </a>
+              <button class="btn btn-secondary" onclick="autofillGenerator(${entry.j}, ${entry.x}, ${entry.y}, ${entry.z})">
+                Generate More Terms
+              </button>
+            </div>
+          </div>
+        `;
+      } else {
+        // Case B: Valid, No Database Match
+        const isBeatty = Math.abs(y - z) === 1;
+        const beattyNoteHtml = isBeatty ? `
+          <div class="math-formula-box" style="border-left-color: var(--success);">
+            <span class="label">Beatty Sequence Candidate</span>
+            <span class="formula">Since |y &minus; z| = 1 (|${y} &minus; ${z}| = 1), this sequence constitutes a Beatty Sequence. Its slope represents an irrational value!</span>
+          </div>
+        ` : '';
+
+        return `
+          <div class="match-card" style="border-color: var(--success); box-shadow: 0 12px 30px rgba(16, 185, 129, 0.15);">
+            <div class="match-header">
+              <div>
+                <h3 class="match-title" style="color:var(--success);">✓ Valid Hiccup Sequence</h3>
+                <div class="param-pillbox mt-4">
+                  <span class="param-pill">j = <span>${j}</span></span>
+                  <span class="param-pill">x = <span>${x}</span></span>
+                  <span class="param-pill">y = <span>${y}</span></span>
+                  <span class="param-pill">z = <span>${z}</span></span>
+                </div>
+              </div>
+              <span class="oeis-badge" style="background:var(--success); color:var(--bg); box-shadow:none;">
+                NEW
+              </span>
+            </div>
+            
+            <p class="match-description">
+              This sequence is not present in our database of known hiccup sequences, but it perfectly satisfies the self-referential definition!
+            </p>
+            
+            ${beattyNoteHtml}
+
+            <div class="card-actions">
+              <a href="${oeisSearchUrl}" target="_blank" rel="noopener noreferrer" class="btn" style="background:var(--success-bg); border-color:var(--success); color:var(--success); text-decoration:none;">
+                Search OEIS ↗
+              </a>
+              <button class="btn btn-secondary" onclick="autofillGenerator(${j}, ${x}, ${y}, ${z})">
+                Generate 50 Terms
+              </button>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+
+    /* --- BUTTON CLICK RUN PIELINES --- */
+
+    // Sync definition-block inputs → generator section and run
+    function syncDefParams() {
+      document.getElementById('param-j').value = document.getElementById('def-param-j').value;
+      document.getElementById('param-x').value = document.getElementById('def-param-x').value;
+      document.getElementById('param-y').value = document.getElementById('def-param-y').value;
+      document.getElementById('param-z').value = document.getElementById('def-param-z').value;
+      validateParamsLive();
+    }
+
+    function runFromDef() {
+      syncDefParams();
+      const genSection = document.getElementById('generator-section');
+      genSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => runGenerator(), 400);
+    }
+
+    // Section 1 Pipeline
+    function runAnalysis() {
+      const inputVal = document.getElementById('sequence-input').value;
+      const parsedSeq = parseInputSequence(inputVal);
+      const resultsDiv = document.getElementById('analysis-results');
+
+      if (parsedSeq.length === 0) {
+        resultsDiv.innerHTML = `
+          <div class="alert-panel danger">
+            <h4>✗ Invalid Input</h4>
+            <p>Please enter comma-separated or space-separated integers in the textarea above.</p>
+          </div>
+        `;
+        resultsDiv.style.display = 'block';
+        return;
+      }
+
+      // Add a tiny visual processing delay (quality feeling)
+      const btn = document.getElementById('analyse-btn');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = `<span class="spinner"></span> Analysing...`;
+      btn.disabled = true;
+
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+
+        const validation = validateHiccup(parsedSeq);
+
+        if (!validation.valid) {
+          let extraTips = "";
+          if (validation.diffs && validation.diffs.length > 0) {
+            const uniqueGaps = [...new Set(validation.diffs)].sort((a,b)=>a-b);
+            extraTips = `
+              <div class="tip mt-4">
+                <strong>First Difference Gaps Analysis:</strong><br>
+                Sequence Differences: [${validation.diffs.slice(0, 15).join(', ')}${validation.diffs.length > 15 ? '...' : ''}]<br>
+                Found ${uniqueGaps.length} distinct gaps: [${uniqueGaps.join(', ')}]
+              </div>
+            `;
+          }
+
+          resultsDiv.innerHTML = `
+            <div class="alert-panel danger">
+              <h4>✗ Not a Hiccup Sequence</h4>
+              <p>${validation.reason}</p>
+              ${extraTips}
+            </div>
+          `;
+          resultsDiv.style.display = 'block';
+          resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          return;
+        }
+
+        // It is a valid sequence!
+        const { j, x, y, z, diffs } = validation;
+        
+        // Match against database
+        const matchResult = matchDatabase(j, x, y, z, parsedSeq, seqDatabase);
+
+        let finalHtml = `
+          <div class="alert-panel success" style="margin-bottom: 1.5rem;">
+            <h4>✓ Sequence Authenticated</h4>
+            <p>Passed all mathematical parameters for a <strong>(${j}, ${x}, ${y}, ${z})-hiccup</strong> sequence rule.</p>
+          </div>
+          
+          <h4 class="mb-2" style="font-family:var(--font-sans); color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em;">Difference Pattern Rhythm Strip:</h4>
+          ${makeRhythmStripHtml(diffs, y, z)}
+          
+          <div style="margin-top: 1.5rem;">
+            ${buildMatchCardHtml(j, x, y, z, parsedSeq, matchResult)}
+          </div>
+        `;
+
+        resultsDiv.innerHTML = finalHtml;
+        resultsDiv.style.display = 'block';
+        resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      }, 150);
+    }
+
+    // Section 2 Pipeline
+    function runGenerator() {
+      const j = parseInt(document.getElementById('param-j').value);
+      const x = parseInt(document.getElementById('param-x').value);
+      const y = parseInt(document.getElementById('param-y').value);
+      const z = parseInt(document.getElementById('param-z').value);
+      const resultsDiv = document.getElementById('generator-results');
+
+      if (isNaN(j) || isNaN(x) || isNaN(y) || isNaN(z) || y === z) {
+        return; // Live validation should block this anyway
+      }
+
+      // Loader spinner
+      const btn = document.getElementById('generate-btn');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = `<span class="spinner"></span> Generating...`;
+      btn.disabled = true;
+
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+
+        const { seq, steps } = generateHiccup(j, x, y, z, 50);
+        const diffs = [];
+        for (let i = 1; i < seq.length; i++) {
+          diffs.push(seq[i] - seq[i-1]);
+        }
+
+        // Match against database
+        const matchResult = matchDatabase(j, x, y, z, seq, seqDatabase);
+        
+        // Cache generated data for the plotter
+        currentGeneratedData = { seq, steps, entry: matchResult, j, x, y, z };
+
+        let lemmaNoteHtml = "";
+        if (j > 0) {
+          lemmaNoteHtml = `
+            <div class="tip mt-4" style="background: rgba(232, 168, 56, 0.03); border:1px dashed rgba(232, 168, 56, 0.25); color: var(--text-muted);">
+              <strong>Lemma 9 Equivalence Theorem (Fokkink–Joshi, 2026):</strong><br>
+              Since lookback j = ${j} (j &gt; 0), this sequence is equivalent to a translated <strong>(0, ${x+j}, ${y}, ${z})</strong>-hiccup sequence shifted along the index grid by ${j} spaces.
+            </div>
+          `;
+        }
+
+        const isGrowthActive = currentPlotMode === 'growth' ? 'active' : '';
+        const isResidualActive = currentPlotMode === 'residual' ? 'active' : '';
+
+        let finalHtml = `
+          <h4 class="mb-2" style="font-family:var(--font-sans); color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em;">Generated Sequence (Stagger Reveal):</h4>
+          ${makeTermsGridHtml(seq, steps)}
+
+          <h4 class="mb-2 mt-4" style="font-family:var(--font-sans); color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em;">Difference Pattern Rhythm Strip:</h4>
+          ${makeRhythmStripHtml(diffs, y, z)}
+
+          ${lemmaNoteHtml}
+
+          <!-- Mathematical Visual Analysis Chart -->
+          <div class="plotter-card">
+            <div class="plotter-header">
+              <h4 style="font-family:var(--font-sans); color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em; margin:0;">
+                Mathematical Analysis Chart
+              </h4>
+              <div class="plotter-tabs">
+                <button class="plot-tab ${isGrowthActive}" onclick="setPlotMode('growth')">Growth Trend</button>
+                <button class="plot-tab ${isResidualActive}" onclick="setPlotMode('residual')">Sturmian Residuals</button>
+              </div>
+            </div>
+            
+            <div class="plotter-canvas-wrapper">
+              <canvas id="sequence-plot" width="800" height="350"></canvas>
+            </div>
+            
+            <div class="plotter-stats" id="plotter-stats"></div>
+          </div>
+
+          <div style="margin-top: 2rem;">
+            ${buildMatchCardHtml(j, x, y, z, seq, matchResult)}
+          </div>
+        `;
+
+        resultsDiv.innerHTML = finalHtml;
+        resultsDiv.style.display = 'block';
+        
+        // Immediately draw coordinate plot on DOM layout paint
+        drawSequenceChart();
+        
+        resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+      }, 150);
+    }
+
+    // Auto-populates Section 2 from buttons
+    function autofillGenerator(j, x, y, z) {
+      document.getElementById('param-j').value = j;
+      document.getElementById('param-x').value = x;
+      document.getElementById('param-y').value = y;
+      document.getElementById('param-z').value = z;
+
+      validateParamsLive();
+
+      const genSection = document.getElementById('generator-section');
+      genSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      // Run generator automatically after scroll
+      setTimeout(() => {
+        runGenerator();
+      }, 500);
+    }
+
+
+    /* --- REFERENCE TABLE CONTROLLER --- */
+
+    function toggleReferenceTable() {
+      const collapsible = document.getElementById('table-collapsible');
+      const btn = document.getElementById('table-toggle-btn');
+      
+      collapsible.classList.toggle('expanded');
+      btn.classList.toggle('active');
+    }
+
+    // Renders table rows in table element
+    function renderReferenceTable(dbList) {
+      const tbody = document.getElementById('table-body');
+      if (!tbody) return;
+      tbody.innerHTML = "";
+
+      if (dbList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted); font-style:italic;">No matching sequences found.</td></tr>`;
+        return;
+      }
+
+      dbList.forEach(entry => {
+        const tr = document.createElement('tr');
+        
+        const isBeattyPill = entry.beatty 
+          ? `<span style="color:var(--accent); font-weight:600;">✓</span>` 
+          : `<span style="color:var(--text-muted); opacity:0.3;">✗</span>`;
+
+        // Check if there is a shift note or special comment
+        let propertiesText = `<strong>${entry.name}</strong>`;
+        if (entry.note) {
+          propertiesText += `<br><span style="font-size:0.8rem; color:var(--text-muted);">${entry.note}</span>`;
+        } else if (entry.formula) {
+          propertiesText += `<br><span style="font-size:0.8rem; color:var(--accent); font-family:var(--font-mono);">${entry.formula}</span>`;
+        }
+
+        tr.innerHTML = `
+          <td><a href="https://oeis.org/${entry.oeis}" target="_blank" rel="noopener noreferrer" style="font-family:var(--font-mono); font-weight:600;">${entry.oeis}</a></td>
+          <td style="text-align:center; font-family:var(--font-mono);">${entry.j}</td>
+          <td style="text-align:center; font-family:var(--font-mono);">${entry.x}</td>
+          <td style="text-align:center; font-family:var(--font-mono); color:var(--accent);">${entry.y}</td>
+          <td style="text-align:center; font-family:var(--font-mono); color:var(--teal);">${entry.z}</td>
+          <td style="max-width:350px;">${propertiesText}</td>
+          <td style="text-align:center;">${isBeattyPill}</td>
+          <td style="text-align:center;">
+            <button class="btn btn-secondary" style="padding:0.35rem 0.75rem; font-size:0.8rem;" onclick="autofillGenerator(${entry.j}, ${entry.x}, ${entry.y}, ${entry.z})">
+              Generate
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Interactive filters for Reference table search
+    function filterReferenceTable() {
+      const searchVal = document.getElementById('db-search').value.toLowerCase().trim();
+      const filterVal = document.getElementById('db-filter').value;
+
+      let filtered = seqDatabase.filter(entry => {
+        // Search text matching
+        const matchesSearch = 
+          entry.oeis.toLowerCase().includes(searchVal) ||
+          entry.name.toLowerCase().includes(searchVal) ||
+          (entry.note && entry.note.toLowerCase().includes(searchVal)) ||
+          `j=${entry.j}`.includes(searchVal) ||
+          `x=${entry.x}`.includes(searchVal) ||
+          `y=${entry.y}`.includes(searchVal) ||
+          `z=${entry.z}`.includes(searchVal);
+
+        if (!matchesSearch) return false;
+
+        // Select filters matching
+        if (filterVal === 'all') return true;
+        if (filterVal === 'beatty') return entry.beatty === true;
+        if (filterVal === 'nonbeatty') return entry.beatty === false;
+        if (filterVal === 'j0') return entry.j === 0;
+        if (filterVal === 'j1') return entry.j === 1;
+
+        return true;
+      });
+
+      renderReferenceTable(filtered);
+    }
+  </script>
+</body>
+</html>
