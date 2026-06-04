@@ -34,7 +34,7 @@
       --success-bg: rgba(16, 185, 129, 0.1);
       --success-border: rgba(16, 185, 129, 0.3);
       --card-radius: 12px;
-      
+
       --font-serif: 'EB Garamond', serif;
       --font-sans: 'Inter', system-ui, sans-serif;
       --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
@@ -269,6 +269,64 @@
     @media (max-width: 480px) {
       .param-grid {
         grid-template-columns: 1fr;
+      }
+    }
+
+    .generator-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      align-items: flex-end;
+      margin-top: 0.25rem;
+    }
+
+    .term-count-group {
+      flex: 0 0 auto;
+      margin-bottom: 0;
+      min-width: 104px;
+      gap: 0.35rem;
+    }
+
+    .term-count-group input {
+      width: 96px;
+      height: 44px;
+      padding: 0.65rem 0.8rem;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    .generator-actions .btn {
+      min-height: 44px;
+      padding: 0.65rem 1.15rem;
+      white-space: nowrap;
+    }
+
+    #generate-btn {
+      min-width: 174px;
+    }
+
+    #copy-seq-btn {
+      min-width: 112px;
+    }
+
+    @media (max-width: 560px) {
+      .generator-actions {
+        align-items: stretch;
+      }
+
+      .term-count-group {
+        flex: 1 1 100%;
+      }
+
+      .term-count-group input,
+      .generator-actions .btn {
+        width: 100%;
+      }
+
+      #generate-btn,
+      #copy-seq-btn {
+        flex: 1 1 180px;
+        min-width: 0;
       }
     }
 
@@ -1482,9 +1540,50 @@
     <header>
       <h1 id="main-title">Hiccup Sequence Explorer</h1>
       <p>Identify and generate self-referential integer sequences from a structured OEIS family.</p>
-      
+      <div style="margin-top:1rem; display:flex; justify-content:center; gap:2rem; flex-wrap:wrap;">
+        <span style="font-family:var(--font-mono); font-size:0.78rem; color:var(--text-muted);">
+          <span style="color:var(--accent); font-weight:700;">27</span> sequences
+        </span>
+        <span style="font-family:var(--font-mono); font-size:0.78rem; color:var(--text-muted);">
+          <span style="color:var(--accent); font-weight:700;">2</span> lookback offsets
+        </span>
+        <span style="font-family:var(--font-mono); font-size:0.78rem; color:var(--text-muted);">
+          <span style="color:var(--accent); font-weight:700;">8</span> closed-form formulas
+        </span>
+        <span style="font-family:var(--font-mono); font-size:0.78rem; color:var(--text-muted);">
+          <a href="https://doi.org/10.1007/s11139-025-01305-1" target="_blank" rel="noopener noreferrer"
+             style="color:var(--accent); text-decoration:none;">Fokkink & Joshi 2026 ↗</a>
+        </span>
+      </div>
+
       <button class="info-btn" onclick="openHelpModal()" aria-label="Explain Hiccup Sequences" title="Explain Hiccup Sequences">?</button>
     </header>
+
+    <!-- SECTION 1 — MATCH A SEQUENCE PREFIX -->
+    <section class="journal-section" aria-labelledby="section1-title">
+      <h2 id="section1-title" class="section-title">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/></svg>
+        Match a Sequence Prefix
+      </h2>
+
+      <div class="form-group">
+        <label for="sequence-input" class="input-label">Prefix Terms</label>
+        <span class="input-desc">Enter comma or space-separated terms to match against registered OEIS hiccup sequences, including termwise shifted matches by addition</span>
+        <textarea id="sequence-input" placeholder="Enter terms, e.g.: 1, 5, 7, 9, 11, 15, 17, 21, 23, 27, 29, 33" oninput="handleInputTextChange()"></textarea>
+
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span id="input-warning" class="warning-label"></span>
+          <span id="char-counter" class="char-counter">0 terms entered</span>
+        </div>
+      </div>
+
+      <button id="analyse-btn" class="btn" onclick="runAnalysis()">
+        Match Prefix
+      </button>
+
+      <!-- Section 1 Results display -->
+      <div id="analysis-results" class="results-container" style="display: none;"></div>
+    </section>
 
     <!-- SECTION 2 — GENERATE FROM PARAMETERS -->
     <section class="journal-section" id="generator-section" aria-labelledby="section2-title">
@@ -1526,10 +1625,10 @@
         <span class="input-desc">Constraint: <strong>y &ne; z required</strong></span>
       </div>
 
-      <div style="display:flex; flex-wrap:wrap; gap:0.75rem; align-items:center;">
-        <div class="form-group" style="flex:0 0 auto; margin-bottom:0;">
+      <div class="generator-actions">
+        <div class="form-group term-count-group">
           <label for="term-count" class="input-label">Term Count</label>
-          <input type="number" id="term-count" value="50" min="5" max="200" step="1" style="width:90px;">
+          <input type="number" id="term-count" value="50" min="5" max="200" step="1">
         </div>
         <button id="generate-btn" class="btn" onclick="runGenerator()">Generate Sequence</button>
         <button id="copy-seq-btn" type="button" class="btn btn-secondary" onclick="copyCurrentSequence()" disabled>Copy terms</button>
@@ -1538,35 +1637,13 @@
       <div id="generator-results" class="results-container" style="display: none;"></div>
     </section>
 
-    <!-- SECTION 1 — MATCH A SEQUENCE PREFIX -->
-    <section class="journal-section" aria-labelledby="section1-title">
-      <h2 id="section1-title" class="section-title">
-        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/></svg>
-        Match a Sequence Prefix
-      </h2>
-      
-      <div class="form-group">
-        <label for="sequence-input" class="input-label">Prefix Terms</label>
-        <span class="input-desc">Enter comma or space-separated terms to match against registered OEIS hiccup sequences, including termwise shifted matches by addition</span>
-        <textarea id="sequence-input" placeholder="Enter terms, e.g.: 1, 5, 7, 9, 11, 15, 17, 21, 23, 27, 29, 33" oninput="handleInputTextChange()"></textarea>
-        
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span id="input-warning" class="warning-label"></span>
-          <span id="char-counter" class="char-counter">0 terms entered</span>
-        </div>
-      </div>
-
-      <button id="analyse-btn" class="btn" onclick="runAnalysis()">
-        Match Prefix
-      </button>
-
-      <!-- Section 1 Results display -->
-      <div id="analysis-results" class="results-container" style="display: none;"></div>
-    </section>
-
-
     <!-- SECTION 3 — REFERENCE DATABASE TABLE -->
     <section class="journal-section" aria-labelledby="section3-title">
+      <h2 id="section3-title" class="section-title">
+        <svg viewBox="0 0 24 24"><path d="M4 5h16v2H4V5zm0 4h16v2H4V9zm0 4h16v2H4v-2zm0 4h16v2H4v-2z"/></svg>
+        Known Hiccup Sequences
+      </h2>
+
       <button class="toggle-trigger-btn" id="table-toggle-btn" aria-expanded="false" aria-controls="table-collapsible" onclick="toggleReferenceTable()">
         <span>Browse all known hiccup sequences (27 records)</span>
         <span class="icon">▼</span>
@@ -1719,6 +1796,26 @@
       });
     }
 
+    function copyCurrentSequence() {
+      if (currentGeneratedData && currentGeneratedData.seq) {
+        copyToClipboard(currentGeneratedData.seq.join(', '));
+      }
+    }
+
+    function exportCurrentSequenceCSV() {
+      if (!currentGeneratedData || !currentGeneratedData.seq) return;
+      const { seq, steps } = currentGeneratedData;
+      const header = 'n,a(n),step\n';
+      const rows = seq.map((val, i) => `${i+1},${val},${steps[i] || ''}`).join('\n');
+      const blob = new Blob([header + rows], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'hiccup_sequence.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
     function updateUrlHash(j, x, y, z) {
       const hash = `#j=${j}&x=${x}&y=${y}&z=${z}`;
       window.history.replaceState(null, '', hash);
@@ -1736,16 +1833,7 @@
         document.getElementById('param-x').value = x;
         document.getElementById('param-y').value = y;
         document.getElementById('param-z').value = z;
-        // Validate and auto-run if all valid
-        setTimeout(() => {
-          const validJ = !isNaN(parseInt(j));
-          const validX = !isNaN(parseInt(x));
-          const validY = !isNaN(parseInt(y));
-          const validZ = !isNaN(parseInt(z));
-          if (validJ && validX && validY && validZ && y !== z) {
-            runGenerator();
-          }
-        }, 100);
+        validateParamsLive();
       }
     }
 
@@ -1803,6 +1891,12 @@
     // Validate input sequence as a hiccup sequence
     function validateHiccup(inputSeq) {
       if (inputSeq.length < 3) return { valid: false, reason: "Too few terms (minimum 3 required)" };
+      if (inputSeq[0] < 0) {
+        return {
+          valid: false,
+          reason: `Starting term x must be non-negative. Found x = ${inputSeq[0]}.`
+        };
+      }
 
       // Check strictly increasing
       for (let i = 1; i < inputSeq.length; i++) {
@@ -1907,8 +2001,9 @@
 
         // 4. Scale match (seq = k * dbSeq)
         if (seq.length >= 5) {
-          const k = seq[0] / dbSeq[0];
-          if (Number.isInteger(k) && k > 1) {
+          const scaleAnchorIndex = dbSeq.findIndex(v => v !== 0);
+          const k = scaleAnchorIndex >= 0 ? seq[scaleAnchorIndex] / dbSeq[scaleAnchorIndex] : NaN;
+          if (!isNaN(k) && Number.isInteger(k) && k > 1) {
             if (dbSeq.every((v, i) => v * k === seq[i])) {
               addDatabaseMatch(matches, seen, { matchType: 'scale', entry, scale: k });
               // End of checks for this entry
@@ -1930,6 +2025,7 @@
     let currentGeneratedData = null; // Stores { seq, steps, entry, j, x, y, z }
     let currentPlotMode = 'growth'; // 'growth' or 'residual'
     let playbackState = { isPlaying: false, currentIndex: 0, intervalId: null };
+    let plotResizeObserver = null;
 
     // Linear regression model fitting
     function fitLinearRegression(seq) {
@@ -1963,10 +2059,15 @@
 
     // Interactive canvas plotting engine
     function drawSequenceChart() {
+      const canvas = document.getElementById('sequence-plot');
+      if (!canvas) return;
+      const wrapper = canvas.parentElement;
+      if (wrapper && canvas.width !== wrapper.clientWidth) {
+        canvas.width = Math.max(wrapper.clientWidth, 400);
+      }
       if (!currentGeneratedData) return;
 
       const { seq, steps, entry } = currentGeneratedData;
-      const canvas = document.getElementById('sequence-plot');
       if (!canvas) return;
 
       const ctx = canvas.getContext('2d');
@@ -2141,11 +2242,11 @@
       // Draw Trendline/Baseline
       ctx.lineWidth = 1;
       if (currentPlotMode === 'growth') {
-        // Draw regression line of best fit
+        // Draw the fitted asymptotic slope as a ratio baseline.
         ctx.strokeStyle = 'rgba(232, 168, 56, 0.2)';
         ctx.beginPath();
-        ctx.moveTo(mapX(xMin), mapY(regression.slope * xMin + regression.intercept));
-        ctx.lineTo(mapX(xMax), mapY(regression.slope * xMax + regression.intercept));
+        ctx.moveTo(mapX(xMin), mapY(regression.slope));
+        ctx.lineTo(mapX(xMax), mapY(regression.slope));
         ctx.stroke();
       } else {
         // Draw baseline center at y = 0
@@ -2285,17 +2386,17 @@
         document.body.appendChild(overlay);
       }
 
-      const n = index;
-      const nMinusJ = n - j;
+      const position = index + 1;
+      const nMinusJ = position - j;
       const seen = seq.slice(0, index);
       const hasNMinusJ = seen.includes(nMinusJ);
       const chosenGap = steps[index] === 'y' ? `+y (${y})` : `+z (${z})`;
 
       overlay.innerHTML = `
-        <h4>Algorithm Step ${index}/${seq.length}</h4>
+        <h4>Algorithm Step ${position}/${seq.length}</h4>
         <div class="algorithm-state">
           <div class="label">Current Index (n)</div>
-          <div class="value">${n}</div>
+          <div class="value">${position}</div>
         </div>
         <div class="algorithm-state">
           <div class="label">Lookback Gap (n − j)</div>
@@ -2310,7 +2411,7 @@
           <div class="value">${chosenGap}</div>
         </div>
         <div class="algorithm-state">
-          <div class="label">a(${index}) = a(${index-1}) ${chosenGap}</div>
+          <div class="label">a(${position}) = a(${position-1}) ${chosenGap}</div>
           <div class="value">${seq[index]}</div>
         </div>
         <button class="btn btn-secondary" onclick="stopPlayback()">Close</button>
@@ -2326,11 +2427,6 @@
     }
 
     /* --- UI CONTROLLERS --- */
-
-    // Load reference table list at page load
-    window.onload = function() {
-      renderReferenceTable(seqDatabase);
-    };
 
     // Open & Close Explanatory Dialog Modal
     function openHelpModal() {
@@ -2362,6 +2458,8 @@
 
       let isValid = true;
       let msg = "";
+      yInput.classList.remove('invalid-border');
+      zInput.classList.remove('invalid-border');
 
       if (isNaN(y) || y < 1) {
         isValid = false;
@@ -2384,8 +2482,6 @@
 
       if (isValid) {
         warn.innerHTML = "";
-        yInput.classList.remove('invalid-border');
-        zInput.classList.remove('invalid-border');
         document.getElementById('generate-btn').disabled = false;
       } else {
         warn.innerHTML = msg;
@@ -2464,8 +2560,10 @@
     // Renders the horizontal flex differences rhythm strip
     function makeRhythmStripHtml(diffs, y, z) {
       let html = `<div class="rhythm-strip">`;
-      for (let i = 0; i < diffs.length; i++) {
-        const diffVal = diffs[i];
+      const displayDiffs = diffs.slice(0, 40);
+      const overflow = diffs.length - displayDiffs.length;
+      for (let i = 0; i < displayDiffs.length; i++) {
+        const diffVal = displayDiffs[i];
         if (diffVal === y) {
           html += `<span class="rhythm-pill y-gap">+${y}</span>`;
         } else if (diffVal === z) {
@@ -2474,14 +2572,17 @@
           html += `<span class="rhythm-pill" style="background:rgba(255,255,255,0.05); color:var(--text-muted); border-color:var(--border-color);">+${diffVal}</span>`;
         }
       }
+      if (overflow > 0) {
+        html += `<span class="rhythm-pill" style="background:transparent; color:var(--text-muted); border:1px dashed var(--border-color);">+${overflow} more</span>`;
+      }
       html += `</div>`;
       return html;
     }
 
     // Creates the Info Card markup for Case C (Match) and Case B (Valid No Match)
     function buildMatchCardHtml(j, x, y, z, seq, matchResult) {
-      const allTermsQuery = seq.join(',');
-      const oeisSearchUrl = `https://oeis.org/search?q=${allTermsQuery}&language=english`;
+      const firstSix = seq.slice(0, 6).join(',');
+      const oeisSearchUrl = `https://oeis.org/search?q=${encodeURIComponent(firstSix)}&language=english`;
 
       if (matchResult) {
         const matches = matchResult.allMatches && matchResult.allMatches.length > 0
@@ -2769,6 +2870,12 @@
         
         // Cache generated data for the plotter
         currentGeneratedData = { seq, steps, entry: matchResult ? matchResult.entry : null, j, x, y, z };
+        const copySeqBtn = document.getElementById('copy-seq-btn');
+        if (copySeqBtn) copySeqBtn.disabled = false;
+
+        const yStepCount = steps.filter(s => s === 'y').length;
+        const zStepCount = steps.filter(s => s === 'z').length;
+        const totalTransitions = Math.max(seq.length - 1, 1);
 
         // Update URL hash with current parameters
         updateUrlHash(j, x, y, z);
@@ -2787,10 +2894,11 @@
         const isResidualActive = currentPlotMode === 'residual' ? 'active' : '';
 
         let finalHtml = `
-          <h4 class="mb-2" style="font-family:var(--font-sans); color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em;">Generated Sequence (Stagger Reveal):</h4>
+          <h4 class="mb-2" style="font-family:var(--font-sans); color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em;">Generated Sequence — ${seq.length} terms &nbsp;·&nbsp; y-steps: ${yStepCount} (${Math.round(yStepCount / totalTransitions * 100)}%) &nbsp;·&nbsp; z-steps: ${zStepCount} (${Math.round(zStepCount / totalTransitions * 100)}%)</h4>
           ${makeTermsGridHtml(seq, steps)}
           <div class="playback-controls">
             <button class="copy-btn" onclick="copyToClipboard('${seq.join(', ')}')">📋 Copy Sequence</button>
+            <button class="copy-btn" onclick="exportCurrentSequenceCSV()">⬇ Export CSV</button>
             <button class="playback-btn" onclick="togglePlayback()">▶ Step Through Algorithm</button>
           </div>
 
@@ -2812,7 +2920,7 @@
             </div>
             
             <div class="plotter-canvas-wrapper">
-              <canvas id="sequence-plot" width="800" height="350"></canvas>
+              <canvas id="sequence-plot" height="350"></canvas>
             </div>
             
             <div class="plotter-stats" id="plotter-stats"></div>
@@ -2828,6 +2936,14 @@
         
         // Immediately draw coordinate plot on DOM layout paint
         drawSequenceChart();
+        const plotCanvas = document.getElementById('sequence-plot');
+        if (plotCanvas && window.ResizeObserver) {
+          if (plotResizeObserver) {
+            plotResizeObserver.disconnect();
+          }
+          plotResizeObserver = new ResizeObserver(() => drawSequenceChart());
+          plotResizeObserver.observe(plotCanvas.parentElement);
+        }
         
         resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
@@ -2868,13 +2984,15 @@
     /* Renders sparkline visualization for a sequence entry */
     function renderSparklineHtml(entry) {
       const sparklineId = `sparkline-${entry.oeis.replace('/', '-')}`;
-      const canvasHtml = `<canvas id="${sparklineId}" width="60" height="14" style="vertical-align:middle; margin-left:0.5rem;"></canvas>`;
+      const canvasHtml = `<canvas id="${sparklineId}" width="90" height="18" style="vertical-align:middle; margin-left:0.5rem;"></canvas>`;
       
       // Generate sequence and render sparkline async
       setTimeout(() => {
         const { seq } = generateHiccup(entry.j, entry.x, entry.y, entry.z, 20);
+        const tooltipTerms = seq.slice(0, 8).join(', ');
         const canvas = document.getElementById(sparklineId);
         if (!canvas) return;
+        canvas.title = `First 8 terms: ${tooltipTerms}`;
         
         const ctx = canvas.getContext('2d');
         const width = 60, height = 14;
@@ -2940,7 +3058,7 @@
 
         tr.innerHTML = `
           <td><a href="https://oeis.org/${entry.oeis}" target="_blank" rel="noopener noreferrer" style="font-family:var(--font-mono); font-weight:600;">${entry.oeis}</a></td>
-          <td style="text-align:center; font-family:var(--font-mono);">${entry.j}</td>
+          <td style="text-align:center; font-family:var(--font-mono); color:${entry.j === 0 ? 'var(--teal)' : entry.j === 1 ? 'var(--accent)' : 'var(--text)'}; font-weight:600;">${entry.j}</td>
           <td style="text-align:center; font-family:var(--font-mono);">${entry.x}</td>
           <td style="text-align:center; font-family:var(--font-mono); color:var(--accent);">${entry.y}</td>
           <td style="text-align:center; font-family:var(--font-mono); color:var(--teal);">${entry.z}</td>

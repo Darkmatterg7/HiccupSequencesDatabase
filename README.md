@@ -28,19 +28,20 @@ Constraints: `j, x ∈ ℤ≥0`, `y, z ∈ ℤ≥1`, `y ≠ z`.
 ## Features
 
 - **Match a sequence prefix** — paste prefix terms and the tool lists every registered OEIS connection with equal weight, including exact parameter matches, termwise shifted-by-addition matches, and scaled matches; this registered-prefix checker still runs even if the entered prefix is not itself a standalone hiccup sequence
-- **Generate a sequence** — enter parameters `(j, x, y, z)` and generate the first 50 terms with an animated stagger reveal
+- **Generate a sequence** — enter parameters `(j, x, y, z)` and generate the first 50 terms with an animated stagger reveal, copy/export actions, and a compact responsive control row
 - **Difference rhythm strip** — visualises the gap pattern as a row of colour-coded pills, making the hiccup rhythm immediately visible
 - **Mathematical analysis chart** — interactive canvas plot with two modes: Growth Trend (convergence ratio `a(n)/n`) and Sturmian Residuals (deviation from the linear slope)
 - **Database of 27 sequences** — covers all known hiccup sequences including the Lower/Upper Wythoff sequences, the BDS sequence, Kimberling's sequence, and more, each with OEIS links and rich info cards
 - **Lemma 9 equivalence** — automatically notes when a `j > 0` sequence is equivalent to a translated `j = 0` sequence (Fokkink–Joshi 2026)
+- **Shareable parameters** — generated parameter sets update the URL hash, and opening a hash-prefilled page restores the inputs without auto-running generation
 
 ## Getting Started
 
 No build step or dependencies required. Just open the file:
 
 ```bash
-git clone https://github.com/your-username/hiccup-sequence-explorer.git
-cd hiccup-sequence-explorer
+git clone https://github.com/Darkmatterg7/HiccupSequencesDatabase.git
+cd HiccupSequencesDatabase
 open index.html
 ```
 
@@ -55,8 +56,12 @@ python -m http.server 8000
 ## Project Structure
 
 ```
-hiccup-sequence-explorer/
-└── index.html    # Entire application — HTML, CSS, and JS in one file
+HiccupSequencesDatabase/
+├── index.html                         # Entire application — HTML, CSS, and JS in one file
+├── hiccup_sequence_website_prompt.md  # Product and implementation prompt/specification
+├── README.md                          # User-facing project overview
+├── CHANGELOG.md                       # Release notes and pending changes
+└── CONTRIBUTING.md                    # Lightweight GitHub workflow guide
 ```
 
 All logic is client-side. There are no external API calls; OEIS links open in a new tab but nothing is fetched at runtime.
