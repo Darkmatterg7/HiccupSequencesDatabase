@@ -114,17 +114,32 @@ sequence, do the following:
        with parameters `(j, x, y, z)`.
 5. If valid, also check: does `|y − z| = 1`? (Beatty sequence candidate)
 
-### Sequence Matching Algorithm
+### Registered Prefix Matching Algorithm
 
-After generating or validating a sequence, match it against the database:
+After generating or validating a sequence, collect every registered OEIS
+connection for the entered prefix. Display all connections with equal visual
+weight. Keep the detected `(j, x, y, z)` values visible above the connection
+list, and put the remaining sequence information inside collapsible connection
+panels.
 
-1. **Exact match**: Compare first N terms with stored sequences (generate
-   stored sequence on the fly using definition).
-2. **Translate match**: Check if input = known_sequence + constant offset
-   (e.g., A081840 = A064437 + 1).
+Important: run this registered-prefix checker independently of standalone
+hiccup validation. If the entered prefix fails the hiccup-rule validation but
+matches registered records by exact prefix, additive termwise shift, or scale,
+still show those registered connections. In that case, omit `(j, x, y, z)` from
+the connection header because no standalone parameters were detected for the
+entered prefix itself.
+
+1. **Exact prefix match**: Compare the entered N terms with the first N terms
+   of each registered sequence (generate stored sequences on the fly using the
+   hiccup definition).
+2. **Termwise shift match**: Check if input = known_sequence + constant offset
+   by addition (e.g., A081840 = A064437 + 1). In the UI, display this as
+   `Shifted by c` rather than `Shifted by +c`; negative values should naturally
+   render as `Shifted by -1`.
 3. **Scale match**: Check if input = k × known_sequence for small integer k.
-4. **Parameter match**: If user supplied (j, x, y, z), look up exact
-   parameters in the database JSON above.
+4. **Parameter match**: If user supplied or detected `(j, x, y, z)`, look up
+   exact parameters in the database JSON above. Do not stop matching after an
+   exact parameter match; continue collecting shifted/scaled connections.
 
 ---
 
@@ -164,10 +179,20 @@ Theme: **Mathematical elegance meets vintage scientific journal** aesthetic.
 
 ---
 
-### Section 1 — "Identify a Sequence"
+### Section 1 — "Match a Sequence Prefix"
 
-**Purpose:** User inputs terms of an unknown sequence; system checks if it
-is a hiccup sequence and, if so, matches it to the known database.
+**Purpose:** User inputs prefix terms; system checks whether they satisfy a
+hiccup rule and which registered OEIS hiccup sequence they match. The match
+may be an exact registered prefix match, a termwise shifted-by-addition
+sequence, or a small integer scale match. If more than one connection is true,
+show all of them as equally important collapsible rows. Registered prefix
+connections should still be shown even when the entered prefix is not a valid
+standalone hiccup sequence.
+
+Title note: prefer **"Match a Sequence Prefix"** over **"Identify a
+Sequence"** or **"Closest Hiccup Sequence"**. "Closest" sounds fuzzy, while the
+current matcher is deterministic: it compares the prefix to registered
+sequences and their termwise shifts by addition/scales.
 
 **UI elements:**
 
@@ -178,7 +203,7 @@ is a hiccup sequence and, if so, matches it to the known database.
    - Minimum 8 terms required for meaningful validation; show a soft warning
      if fewer than 8 are entered
 
-2. **"Analyse" button** — triggers the full pipeline below
+2. **"Match Prefix" button** — triggers the full pipeline below
 
 3. **Results panel** (appears below after analysis):
 

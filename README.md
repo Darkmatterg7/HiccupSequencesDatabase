@@ -2,7 +2,7 @@
 
 # Hiccup Sequence Explorer
 
-An interactive, single-file web tool for identifying and generating **hiccup sequences** — a family of self-referential integer sequences from Cloitre's OEIS collection, formally studied by Fokkink and Joshi (2026).
+An interactive, single-file web tool for matching and generating **hiccup sequences** — a family of self-referential integer sequences from Cloitre's OEIS collection, formally studied by Fokkink and Joshi (2026).
 
 ## What is a Hiccup Sequence?
 
@@ -27,7 +27,7 @@ Constraints: `j, x ∈ ℤ≥0`, `y, z ∈ ℤ≥1`, `y ≠ z`.
 
 ## Features
 
-- **Identify a sequence** — paste any integer sequence and the tool validates whether it is a hiccup sequence, determines its `(j, x, y, z)` parameters, and matches it against a database of 27 known OEIS entries
+- **Match a sequence prefix** — paste prefix terms and the tool lists every registered OEIS connection with equal weight, including exact parameter matches, termwise shifted-by-addition matches, and scaled matches; this registered-prefix checker still runs even if the entered prefix is not itself a standalone hiccup sequence
 - **Generate a sequence** — enter parameters `(j, x, y, z)` and generate the first 50 terms with an animated stagger reveal
 - **Difference rhythm strip** — visualises the gap pattern as a row of colour-coded pills, making the hiccup rhythm immediately visible
 - **Mathematical analysis chart** — interactive canvas plot with two modes: Growth Trend (convergence ratio `a(n)/n`) and Sturmian Residuals (deviation from the linear slope)
