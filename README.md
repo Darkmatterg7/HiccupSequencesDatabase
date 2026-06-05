@@ -57,14 +57,40 @@ python -m http.server 8000
 
 ```
 HiccupSequencesDatabase/
-├── index.html                         # Entire application — HTML, CSS, and JS in one file
+├── index.html                         # Main application — HTML, CSS, and JS in one file
+├── sequence-index.json                # Registry mapping OEIS sequence IDs to individual file paths
+├── sequences/                         # Folder containing individual JSON files for each sequence
+│   ├── A000201.json
+│   └── ...
+├── submissions/                       # Folder containing community sequence submissions in JSON format
+├── reviews/                           # Folder containing reviewer review records in JSON format
+├── extract_db.js                      # Helper script for migrating inline database to sequences/
 ├── hiccup_sequence_website_prompt.md  # Product and implementation prompt/specification
 ├── README.md                          # User-facing project overview
 ├── CHANGELOG.md                       # Release notes and pending changes
 └── CONTRIBUTING.md                    # Lightweight GitHub workflow guide
 ```
 
-All logic is client-side. There are no external API calls; OEIS links open in a new tab but nothing is fetched at runtime.
+## Community Submissions & Moderation
+
+The Hiccup Sequence Explorer features a fully integrated sequence contribution workflow:
+
+1. **User Sign In / Switcher**: A mock user switcher allows you to swap profiles (Regular User, Reviewer, Administrator) to test the flow end-to-end.
+2. **Submission Wizard**: Users can click "Submit Sequence" to launch a 4-step wizard:
+   - *Parameters*: Set `j`, `x`, `y`, `z` parameters and preview terms with a duplicate sequence warning detector.
+   - *Metadata*: Document title, description, references, and notes.
+   - *Mathematical Connections*: Detail formulas, morphisms, Sturmian slope deviations, or Beatty attributes.
+   - *Review & Submit*: Final validation check before submitting.
+3. **Submission Tracking**: Users can view their submitted sequences and see statuses (`draft`, `pending_review`, `changes_requested`, `approved`, `rejected`, `published`). If changes are requested, the sequence can be edited and resubmitted directly.
+4. **Moderation Dashboard**: Users with `reviewer` or `admin` roles can access the Moderation Dashboard to approve, reject, or request changes on pending submissions.
+5. **Local Workspace Storage**:
+   - Administrators can click **Connect Local Folder** in the dashboard or header to grant the app **File System Access API** permissions.
+   - Once connected, new submissions are saved as JSON files inside `submissions/`, review records inside `reviews/`, and approved publications write directly to `sequences/` while updating the mapping registry in `sequence-index.json`.
+   - If not connected, the data falls back to `localStorage`, and administrators are provided with copy-pasteable JSON output to save manually.
+
+---
+
+All core logic is client-side. There are no external API dependencies.
 
 ## Sequence Database
 

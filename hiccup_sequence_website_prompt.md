@@ -484,6 +484,39 @@ KaTeX snippet for rendering LaTeX, but it is not required.
 
 ---
 
+## COMMUNITY SEQUENCE SUBMISSIONS & MODERATION SYSTEM
+
+### Refactored Database Architecture (Phase 0)
+
+1. The sequence database must be externalized. Do not embed the large `seqDatabase` array inside `index.html`.
+2. Extract all sequence records into individual JSON files under `sequences/` (e.g. `sequences/A000201.json`).
+3. Store the list registry mapping inside `sequence-index.json`.
+4. Dynamically load the database at startup using `fetch` of `sequence-index.json` and parallel fetching of the individual sequence files.
+
+### Moderation System (Phase 1)
+
+1. **User Auth Simulation**:
+   - Fields: `id`, `username`, `email`, `role` (`user` | `reviewer` | `admin`).
+   - Mock dropdown to easily swap user roles to verify workflows.
+2. **SequenceSubmission Fields**:
+   - `submissionId`, `status` (`draft` | `pending_review` | `changes_requested` | `approved` | `rejected` | `published`), `submitterId`, `submittedAt`, `updatedAt`, parameters `(j, x, y, z)`, metadata (title, description, references, oeisLinks, notes, mathematicalConnections).
+3. **ReviewRecord Fields**:
+   - `reviewId`, `submissionId`, `reviewerId`, `decision` (`approve` | `reject` | `request_changes`), `comments`, `timestamp`.
+4. **UI Submissions flow & Moderation**:
+   - Header & Database sections contain a "Submit Sequence" button.
+   - If signed in, opens a 4-step wizard:
+     - Step 1: Parameters + Live Terms Preview + Duplicate Checker.
+     - Step 2: Title, Description, OEIS link, references.
+     - Step 3: Mathematical connections (multi-input pills).
+     - Step 4: Final verification and submission.
+   - Tracker panel ("My Submissions") for users to edit drafts and resubmit sequences with reviewer comments.
+   - Moderation Dashboard for reviewers and admins with tabs for "Pending Review" and "All Submissions", displaying details, review comments box, and action buttons.
+5. **Data Storage & File System Access API**:
+   - If connected to local workspace via directory picker, write submissions to `submissions/<submissionId>.json`, reviews to `reviews/<reviewId>.json`, and published sequences to `sequences/` while modifying `sequence-index.json`.
+   - If not connected, fallback to browser `localStorage` and output copy-pasteable JSON to copy manually.
+
+---
+
 ## DELIVERABLE
 
 Produce a single self-contained `index.html` file with all CSS and

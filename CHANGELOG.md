@@ -5,6 +5,18 @@ All notable changes to this project should be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Community sequence submission wizard
+- Submissions tracking dashboard
+- Admin and Moderation dashboards
+- File System Access API integration
+- Client-side mock authentication widget
+- Support for `submissions/` and `reviews/` folders
+
+### Refactored
+- Externalized sequence database from `index.html` to individual files under `sequences/` folder and registered index mapping in `sequence-index.json` (Phase 0 database refactor)
+- Shifted application data loading logic to asynchronously fetch sequence metadata files at startup
+
+### Added
 - Registered prefix matching guidance for exact, shifted, and scaled OEIS connections
 - Full first-screen prefix matcher section restored ahead of the generator workflow
 - Copy and CSV export actions for generated sequences
