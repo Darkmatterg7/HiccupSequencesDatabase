@@ -3057,8 +3057,6 @@
           <h4 class="mb-2" style="font-family:var(--font-sans); color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em;">Generated Sequence — ${seq.length} terms &nbsp;·&nbsp; y-steps: ${yStepCount} (${Math.round(yStepCount / totalTransitions * 100)}%) &nbsp;·&nbsp; z-steps: ${zStepCount} (${Math.round(zStepCount / totalTransitions * 100)}%)</h4>
           ${makeTermsGridHtml(seq, steps)}
           <div class="playback-controls">
-            <button class="copy-btn" onclick="copyToClipboard('${seq.join(', ')}')">📋 Copy Sequence</button>
-            <button class="copy-btn" onclick="exportCurrentSequenceCSV()">⬇ Export CSV</button>
             <button class="playback-btn" onclick="togglePlayback()">▶ Step Through Algorithm</button>
           </div>
 
