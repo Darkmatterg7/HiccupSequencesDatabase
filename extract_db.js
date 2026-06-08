@@ -53,7 +53,7 @@ seqDatabase.forEach(entry => {
 // Also update the sequence-index.json (registry)
 const index = {};
 seqDatabase.forEach(entry => {
-  index[entry.oeis] = `${entry.oeis}.json`;
+  index[entry.oeis] = `sequences/${entry.oeis}.json`;
 });
 const seqIndexPath = path.join(__dirname, 'sequence-index.json');
 fs.writeFileSync(seqIndexPath, JSON.stringify(index, null, 2));
