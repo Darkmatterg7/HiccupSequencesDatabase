@@ -2662,7 +2662,7 @@
 
     // Creates the Info Card markup for Case C (Match) and Case B (Valid No Match)
     function buildMatchCardHtml(j, x, y, z, seq, matchResult) {
-      const firstSix = seq.slice(0, 12).join(',');
+      const firstSix = seq.slice(0, Math.min(seq.length, 50)).join(',');
       const oeisSearchUrl = `https://oeis.org/search?q=${encodeURIComponent(firstSix)}&language=english`;
 
       if (matchResult) {
