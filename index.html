@@ -1542,6 +1542,11 @@
       flex: 1;
       min-width: 0;
     }
+    .input-with-stepper .button-column {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
     .stepper-btn {
       background: var(--accent-muted);
       border: 1px solid var(--accent);
@@ -1636,38 +1641,46 @@
       <div class="param-grid">
         <div class="form-group">
           <label for="param-j" class="input-label">Lookback Offset (j)</label>
-          <span class="input-desc">Range: 0–5</span>
+          <span class="input-desc">Range: 0–50</span>
           <div class="input-with-stepper">
-            <input type="number" id="param-j" value="0" min="0" max="5" oninput="validateParamsLive()">
-            <button type="button" class="stepper-btn up" onclick="adjustParam('param-j', 1)">▲</button>
-            <button type="button" class="stepper-btn down" onclick="adjustParam('param-j', -1)">▼</button>
+            <input type="number" id="param-j" value="0" min="0" max="50" oninput="validateParamsLive()">
+            <div class="button-column">
+              <button type="button" class="stepper-btn up" onclick="adjustParam('param-j', 1)" aria-label="Increase j">▲</button>
+              <button type="button" class="stepper-btn down" onclick="adjustParam('param-j', -1)" aria-label="Decrease j">▼</button>
+            </div>
           </div>
         </div>
         <div class="form-group">
           <label for="param-x" class="input-label">Starting Value (x)</label>
-          <span class="input-desc">Range: 0–100</span>
+          <span class="input-desc">Range: 0–50</span>
           <div class="input-with-stepper">
-            <input type="number" id="param-x" value="1" min="0" max="100" oninput="validateParamsLive()">
-            <button type="button" class="stepper-btn up" onclick="adjustParam('param-x', 1)">▲</button>
-            <button type="button" class="stepper-btn down" onclick="adjustParam('param-x', -1)">▼</button>
+            <input type="number" id="param-x" value="1" min="0" max="50" oninput="validateParamsLive()">
+            <div class="button-column">
+              <button type="button" class="stepper-btn up" onclick="adjustParam('param-x', 1)" aria-label="Increase x">▲</button>
+              <button type="button" class="stepper-btn down" onclick="adjustParam('param-x', -1)" aria-label="Decrease x">▼</button>
+            </div>
           </div>
         </div>
         <div class="form-group">
           <label for="param-y" class="input-label">Gap if in sequence (y)</label>
-          <span class="input-desc">Range: 1–20</span>
+          <span class="input-desc">Range: 0–50</span>
           <div class="input-with-stepper">
-            <input type="number" id="param-y" value="2" min="1" max="20" oninput="validateParamsLive()">
-            <button type="button" class="stepper-btn up" onclick="adjustParam('param-y', 1)">▲</button>
-            <button type="button" class="stepper-btn down" onclick="adjustParam('param-y', -1)">▼</button>
+            <input type="number" id="param-y" value="2" min="0" max="50" oninput="validateParamsLive()">
+            <div class="button-column">
+              <button type="button" class="stepper-btn up" onclick="adjustParam('param-y', 1)" aria-label="Increase y">▲</button>
+              <button type="button" class="stepper-btn down" onclick="adjustParam('param-y', -1)" aria-label="Decrease y">▼</button>
+            </div>
           </div>
         </div>
         <div class="form-group">
           <label for="param-z" class="input-label">Gap if not in sequence (z)</label>
-          <span class="input-desc">Range: 1–20</span>
+          <span class="input-desc">Range: 0–50</span>
           <div class="input-with-stepper">
-            <input type="number" id="param-z" value="3" min="1" max="20" oninput="validateParamsLive()">
-            <button type="button" class="stepper-btn up" onclick="adjustParam('param-z', 1)">▲</button>
-            <button type="button" class="stepper-btn down" onclick="adjustParam('param-z', -1)">▼</button>
+            <input type="number" id="param-z" value="3" min="0" max="50" oninput="validateParamsLive()">
+            <div class="button-column">
+              <button type="button" class="stepper-btn up" onclick="adjustParam('param-z', 1)" aria-label="Increase z">▲</button>
+              <button type="button" class="stepper-btn down" onclick="adjustParam('param-z', -1)" aria-label="Decrease z">▼</button>
+            </div>
           </div>
         </div>
       </div>
@@ -2507,27 +2520,43 @@
       const warn = document.getElementById('param-warning');
       const yInput = document.getElementById('param-y');
       const zInput = document.getElementById('param-z');
+      const jInput = document.getElementById('param-j');
+      const xInput = document.getElementById('param-x');
 
       let isValid = true;
       let msg = "";
       yInput.classList.remove('invalid-border');
       zInput.classList.remove('invalid-border');
+      jInput.classList.remove('invalid-border');
+      xInput.classList.remove('invalid-border');
 
-      if (isNaN(y) || y < 1) {
+      if (isNaN(y) || y < 0) {
         isValid = false;
-        msg = "Gap y must be &ge; 1";
-      } else if (isNaN(z) || z < 1) {
+        msg = "Gap y must be ≥ 0";
+      } else if (isNaN(z) || z < 0) {
         isValid = false;
-        msg = "Gap z must be &ge; 1";
+        msg = "Gap z must be ≥ 0";
       } else if (isNaN(j) || j < 0) {
         isValid = false;
-        msg = "Lookback offset j must be &ge; 0";
+        msg = "Lookback offset j must be ≥ 0";
       } else if (isNaN(x) || x < 0) {
         isValid = false;
-        msg = "Starting value x must be &ge; 0";
+        msg = "Starting value x must be ≥ 0";
+      } else if (y > 50) {
+        isValid = false;
+        msg = "Gap y must be ≤ 50";
+      } else if (z > 50) {
+        isValid = false;
+        msg = "Gap z must be ≤ 50";
+      } else if (j > 50) {
+        isValid = false;
+        msg = "Lookback offset j must be ≤ 50";
+      } else if (x > 50) {
+        isValid = false;
+        msg = "Starting value x must be ≤ 50";
       } else if (y === z) {
         isValid = false;
-        msg = "Constraint violated: Gap y and gap z must differ (y &ne; z)";
+        msg = "Constraint violated: Gap y and gap z must differ (y ≠ z)";
         yInput.classList.add('invalid-border');
         zInput.classList.add('invalid-border');
       }
@@ -2633,7 +2662,7 @@
 
     // Creates the Info Card markup for Case C (Match) and Case B (Valid No Match)
     function buildMatchCardHtml(j, x, y, z, seq, matchResult) {
-      const firstSix = seq.slice(0, 6).join(',');
+      const firstSix = seq.slice(0, 12).join(',');
       const oeisSearchUrl = `https://oeis.org/search?q=${encodeURIComponent(firstSix)}&language=english`;
 
       if (matchResult) {
