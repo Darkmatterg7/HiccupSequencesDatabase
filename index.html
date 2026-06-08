@@ -2957,7 +2957,7 @@
               </div>
             `;
             resultsDiv.style.display = 'block';
-            resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            resultsDiv.scrollIntoView({ behavior: 'auto', block: 'nearest' });
             return;
           }
 
@@ -2969,7 +2969,7 @@
             </div>
           `;
           resultsDiv.style.display = 'block';
-          resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          resultsDiv.scrollIntoView({ behavior: 'auto', block: 'nearest' });
           return;
         }
 
@@ -2995,7 +2995,7 @@
 
         resultsDiv.innerHTML = finalHtml;
         resultsDiv.style.display = 'block';
-        resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        resultsDiv.scrollIntoView({ behavior: 'auto', block: 'nearest' });
 
       }, 150);
     }
@@ -3118,7 +3118,7 @@
           }
         }
         
-        resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        resultsDiv.scrollIntoView({ behavior: 'auto', block: 'nearest' });
 
       }, 150);
     }
@@ -3133,7 +3133,7 @@
       validateParamsLive();
 
       const genSection = document.getElementById('generator-section');
-      genSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      genSection.scrollIntoView({ behavior: 'auto', block: 'start' });
 
       // Run generator automatically after scroll
       setTimeout(() => {
