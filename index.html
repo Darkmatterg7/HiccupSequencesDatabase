@@ -1576,6 +1576,7 @@
       cursor: not-allowed;
     }
     /* QR code trigger and modal */
+  /* QR code trigger and modal */
   #qr-trigger {
     position: fixed;
     bottom: 20px;
@@ -1597,12 +1598,17 @@
     filter: brightness(1.1);
   }
   #qr-trigger:active {
-    transform: scale(0.95);
+    transform: scale(1.2);
+  }
+  #qr-trigger.expanded {
+    transform: scale(1.3);
   }
   #qr-trigger img {
     width: 28px;
     height: 28px;
   }
+
+  /* QR modal overlay */
 
   /* QR modal overlay */
   #qr-modal {
@@ -1626,6 +1632,10 @@
     max-height: 90vh;
     border-radius: 16px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  }
+  body.bright {
+    filter: brightness(1.2);
+    transition: filter 0.3s ease;
   }
 
   </style>
@@ -3311,11 +3321,15 @@
   const qrModal = document.getElementById('qr-modal');
   if (qrTrigger && qrModal) {
     qrTrigger.addEventListener('click', () => {
+      qrTrigger.classList.add('expanded');
+      document.body.classList.add('bright');
       qrModal.classList.add('show');
     });
     qrModal.addEventListener('click', (e) => {
       if (e.target === qrModal) {
         qrModal.classList.remove('show');
+        qrTrigger.classList.remove('expanded');
+        document.body.classList.remove('bright');
       }
     });
   }
