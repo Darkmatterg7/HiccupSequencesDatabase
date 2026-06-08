@@ -1531,6 +1531,45 @@
       width: 100%;
       margin-top: 1rem;
     }
+
+    /* Stepper controls for parameters */
+    .input-with-stepper {
+      display: flex;
+      align-items: stretch;
+      gap: 0.25rem;
+    }
+    .input-with-stepper input {
+      flex: 1;
+      min-width: 0;
+    }
+    .stepper-btn {
+      background: var(--accent-muted);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      line-height: 1;
+    }
+    .stepper-btn:hover:not(:disabled) {
+      background: var(--accent);
+      color: var(--bg);
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+    .stepper-btn:active {
+      transform: translateY(1px);
+    }
+    .stepper-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
@@ -1598,22 +1637,38 @@
         <div class="form-group">
           <label for="param-j" class="input-label">Lookback Offset (j)</label>
           <span class="input-desc">Range: 0–5</span>
-          <input type="number" id="param-j" value="0" min="0" max="5" oninput="validateParamsLive()">
+          <div class="input-with-stepper">
+            <input type="number" id="param-j" value="0" min="0" max="5" oninput="validateParamsLive()">
+            <button type="button" class="stepper-btn up" onclick="adjustParam('param-j', 1)">▲</button>
+            <button type="button" class="stepper-btn down" onclick="adjustParam('param-j', -1)">▼</button>
+          </div>
         </div>
         <div class="form-group">
           <label for="param-x" class="input-label">Starting Value (x)</label>
           <span class="input-desc">Range: 0–100</span>
-          <input type="number" id="param-x" value="1" min="0" max="100" oninput="validateParamsLive()">
+          <div class="input-with-stepper">
+            <input type="number" id="param-x" value="1" min="0" max="100" oninput="validateParamsLive()">
+            <button type="button" class="stepper-btn up" onclick="adjustParam('param-x', 1)">▲</button>
+            <button type="button" class="stepper-btn down" onclick="adjustParam('param-x', -1)">▼</button>
+          </div>
         </div>
         <div class="form-group">
           <label for="param-y" class="input-label">Gap if in sequence (y)</label>
           <span class="input-desc">Range: 1–20</span>
-          <input type="number" id="param-y" value="2" min="1" max="20" oninput="validateParamsLive()">
+          <div class="input-with-stepper">
+            <input type="number" id="param-y" value="2" min="1" max="20" oninput="validateParamsLive()">
+            <button type="button" class="stepper-btn up" onclick="adjustParam('param-y', 1)">▲</button>
+            <button type="button" class="stepper-btn down" onclick="adjustParam('param-y', -1)">▼</button>
+          </div>
         </div>
         <div class="form-group">
           <label for="param-z" class="input-label">Gap if not in sequence (z)</label>
           <span class="input-desc">Range: 1–20</span>
-          <input type="number" id="param-z" value="3" min="1" max="20" oninput="validateParamsLive()">
+          <div class="input-with-stepper">
+            <input type="number" id="param-z" value="3" min="1" max="20" oninput="validateParamsLive()">
+            <button type="button" class="stepper-btn up" onclick="adjustParam('param-z', 1)">▲</button>
+            <button type="button" class="stepper-btn down" onclick="adjustParam('param-z', -1)">▼</button>
+          </div>
         </div>
       </div>
 
@@ -2963,6 +3018,20 @@
       setTimeout(() => {
         runGenerator();
       }, 500);
+    }
+
+    // Stepper button handler for parameter inputs
+    function adjustParam(paramId, delta) {
+      const input = document.getElementById(paramId);
+      let value = parseInt(input.value);
+      if (isNaN(value)) value = parseInt(input.getAttribute('placeholder') || '0');
+      value = value + delta;
+      const min = parseInt(input.getAttribute('min') || '0');
+      const max = parseInt(input.getAttribute('max') || 'Infinity');
+      if (value < min) value = min;
+      if (value > max) value = max;
+      input.value = value;
+      validateParamsLive();
     }
 
 
