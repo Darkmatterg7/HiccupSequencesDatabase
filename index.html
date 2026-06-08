@@ -1536,7 +1536,7 @@
     .input-with-stepper {
       display: flex;
       align-items: stretch;
-      gap: 0.25rem;
+      gap: 0.5rem;
     }
     .input-with-stepper input {
       flex: 1;
@@ -1545,21 +1545,21 @@
     .input-with-stepper .button-column {
       display: flex;
       flex-direction: column;
-      gap: 0.25rem;
+      gap: 0.5rem;
     }
     .stepper-btn {
       background: var(--accent-muted);
       border: 1px solid var(--accent);
       color: var(--accent);
       font-family: var(--font-mono);
-      font-size: 0.9rem;
-      width: 28px;
-      height: 28px;
+      font-size: 1rem;
+      width: 44px;
+      height: 44px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      border-radius: 4px;
+      border-radius: 6px;
       transition: all 0.2s ease;
       line-height: 1;
     }
@@ -1854,11 +1854,30 @@
     }
 
     function copyToClipboard(text) {
-      navigator.clipboard.writeText(text).then(() => {
-        showToast('Copied to clipboard!');
-      }).catch(() => {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast('Copied to clipboard!');
+        }).catch(() => {
+          fallbackCopy(text);
+        });
+      } else {
+        fallbackCopy(text);
+      }
+    }
+
+    function fallbackCopy(text) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed'; // Prevent scrolling to bottom
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        const successful = document.execCommand('copy');
+        showToast(successful ? 'Copied to clipboard!' : 'Failed to copy');
+      } catch (err) {
         showToast('Failed to copy');
-      });
+      }
+      document.body.removeChild(textarea);
     }
 
     function copyCurrentSequence() {
@@ -1893,7 +1912,7 @@
       const y = params.get('y');
       const z = params.get('z');
 
-      if (j && x && y && z) {
+      if (j !== null && j !== '' && x !== null && x !== '' && y !== null && y !== '' && z !== null && z !== '') {
         document.getElementById('param-j').value = j;
         document.getElementById('param-x').value = x;
         document.getElementById('param-y').value = y;
@@ -2091,6 +2110,7 @@
     let currentPlotMode = 'growth'; // 'growth' or 'residual'
     let playbackState = { isPlaying: false, currentIndex: 0, intervalId: null };
     let plotResizeObserver = null;
+    let plotResizeListener = null;
 
     // Linear regression model fitting
     function fitLinearRegression(seq) {
@@ -3018,12 +3038,21 @@
         // Immediately draw coordinate plot on DOM layout paint
         drawSequenceChart();
         const plotCanvas = document.getElementById('sequence-plot');
-        if (plotCanvas && window.ResizeObserver) {
-          if (plotResizeObserver) {
-            plotResizeObserver.disconnect();
+        if (plotCanvas) {
+          if (window.ResizeObserver) {
+            if (plotResizeObserver) {
+              plotResizeObserver.disconnect();
+            }
+            plotResizeObserver = new ResizeObserver(() => drawSequenceChart());
+            plotResizeObserver.observe(plotCanvas.parentElement);
+          } else {
+            // Fallback to window resize event
+            if (plotResizeListener) {
+              window.removeEventListener('resize', plotResizeListener);
+            }
+            plotResizeListener = () => drawSequenceChart();
+            window.addEventListener('resize', plotResizeListener);
           }
-          plotResizeObserver = new ResizeObserver(() => drawSequenceChart());
-          plotResizeObserver.observe(plotCanvas.parentElement);
         }
         
         resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -3225,5 +3254,8 @@
       renderReferenceTable(seqDatabase);
     });
   </script>
+  <div style="position:fixed; bottom:20px; right:20px; z-index:1000; background:rgba(0,0,0,0.6); padding:10px; border-radius:8px;">
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://darkmatterg7.github.io/HiccupSequencesDatabase/" alt="QR code to site" style="width:150px;height:150px;">
+  </div>
 </body>
 </html>
