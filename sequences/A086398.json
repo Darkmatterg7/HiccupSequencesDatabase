@@ -1,0 +1,18 @@
+{
+  "oeis": "A086398",
+  "j": 1,
+  "x": 1,
+  "y": 4,
+  "z": 2,
+  "name": "A086398 (Kimberling's sequence)",
+  "beatty": false,
+  "slope": 2.732050807568877,
+  "bounds": [
+    -1,
+    4
+  ],
+  "boundsName": "Kimberling Conjecture: -1 < n(1+√3) - a(n) < 4",
+  "morphism": "0 → 10, 1 → 1000",
+  "note": "All terms odd; Kimberling conjectured −1 < n(1+√3) − a(n) < 4",
+  "description": "A (1,1,4,2)-hiccup sequence where all terms are odd. Kimberling conjectured that −1 < n(1+√3) − a(n) < 4. The sequence is the fixed point of 0 → 10, 1 → 1000 (morphic but not a Beatty sequence). By Lemma 9 of Fokkink–Joshi, it is a translate of A284753."
+}

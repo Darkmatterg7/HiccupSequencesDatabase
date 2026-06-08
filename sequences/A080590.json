@@ -1,0 +1,11 @@
+{
+  "oeis": "A080590",
+  "j": 0,
+  "x": 1,
+  "y": 3,
+  "z": 4,
+  "name": "A080590",
+  "beatty": true,
+  "slope": 3.447,
+  "description": "A Beatty sequence candidate with gap values 3 and 4. Because |3 - 4| = 1, its differences are consecutive, meaning it can be represented as a Beatty sequence with a slope between 3 and 4. It exhibits a beautiful periodic lookback behavior."
+}

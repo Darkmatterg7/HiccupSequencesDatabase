@@ -1,0 +1,11 @@
+{
+  "oeis": "A081843",
+  "j": 0,
+  "x": 0,
+  "y": 5,
+  "z": 4,
+  "name": "A081843",
+  "beatty": true,
+  "slope": 4.414,
+  "description": "A (0,0,5,4)-hiccup sequence. Since the gaps are 5 and 4, it is a Beatty sequence. It exhibits a beautiful, dense lookback structure."
+}

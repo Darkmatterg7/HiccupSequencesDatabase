@@ -1,0 +1,13 @@
+{
+  "oeis": "A000201",
+  "j": 1,
+  "x": 1,
+  "y": 2,
+  "z": 1,
+  "name": "Lower Wythoff sequence",
+  "beatty": true,
+  "formula": "⌊n·φ⌋",
+  "phi": true,
+  "slope": 1.618033988749895,
+  "description": "The positions of the letter 'n' in Wythoff's game — a two-pile Nim variant. Defined as ⌊n·φ⌋ where φ = (1+√5)/2 ≈ 1.618 is the golden ratio. Together with A001950 (Upper Wythoff), it forms a partition of the positive integers. As a (1,1,2,1)-hiccup sequence it reflects a deep connection between self-referential definitions and Beatty sequences."
+}

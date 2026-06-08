@@ -1,0 +1,10 @@
+{
+  "oeis": "A080578",
+  "j": 0,
+  "x": 1,
+  "y": 1,
+  "z": 3,
+  "name": "A080578 — morphic but NOT automatic",
+  "beatty": false,
+  "description": "Notably, this is a morphic sequence that is NOT k-automatic for any k. It is Example 16 in the survey by Allouche, Shallit, and Yassawi (2022) 'How to prove that a sequence is not automatic.' The generating morphism is not primitive (its adjacency matrix restricted to {0,1} is not primitive when y = 1)."
+}

@@ -1,0 +1,10 @@
+{
+  "oeis": "A026352",
+  "j": 1,
+  "x": 1,
+  "y": 2,
+  "z": 3,
+  "name": "A026352",
+  "beatty": false,
+  "description": "A (1,1,2,3)-hiccup sequence. Despite having consecutive gaps 2 and 3, it is NOT a Beatty sequence because it fails the homogeneous distribution due to the j=1 lookback parameters. It highlights the subtle boundary between Beatty and morphic sequences."
+}

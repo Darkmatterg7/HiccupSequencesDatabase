@@ -1,0 +1,10 @@
+{
+  "oeis": "A080580",
+  "j": 0,
+  "x": 1,
+  "y": 2,
+  "z": 4,
+  "name": "A080580",
+  "beatty": false,
+  "description": "A (0,1,2,4)-hiccup sequence. It generates terms starting at 1, adding 2 if the lookback n is in the sequence, and 4 otherwise. This results in a sequence of entirely odd numbers after the first few terms, showing a distinctive modular behavior."
+}

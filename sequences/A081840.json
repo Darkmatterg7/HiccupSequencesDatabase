@@ -1,0 +1,11 @@
+{
+  "oeis": "A081840",
+  "j": 0,
+  "x": 0,
+  "y": 3,
+  "z": 4,
+  "name": "A081840 (= A064437 + 1)",
+  "beatty": true,
+  "slope": 2.414213562373095,
+  "description": "This sequence is exactly equal to Robert Israel's sequence (A064437) offset by +1. This illustrates translation symmetries in the hiccup family, where different initial terms yield isomorphic gap patterns."
+}

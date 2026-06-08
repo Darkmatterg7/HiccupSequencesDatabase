@@ -1,0 +1,10 @@
+{
+  "oeis": "A045412",
+  "j": 0,
+  "x": 3,
+  "y": 1,
+  "z": 3,
+  "name": "A045412",
+  "beatty": false,
+  "description": "A self-referential sequence defined by Benoit Cloitre in 2003. Since y=1 and z=3, the differences take values 1 and 3, meaning the gaps are not consecutive, so it cannot form a standard Beatty sequence. Its structure shows highly complex self-referential patterns."
+}

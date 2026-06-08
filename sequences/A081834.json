@@ -1,0 +1,11 @@
+{
+  "oeis": "A081834",
+  "j": 0,
+  "x": 1,
+  "y": 4,
+  "z": 3,
+  "name": "A081834",
+  "beatty": true,
+  "slope": 3.447,
+  "description": "A Beatty sequence candidate starting at 1, with lookback offset 0 and gaps 4 and 3. It generates an elegant sequence of integers whose first differences represent a Sturmian sequence over the alphabet {3, 4}."
+}

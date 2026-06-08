@@ -1,0 +1,11 @@
+{
+  "oeis": "A081842",
+  "j": 0,
+  "x": 0,
+  "y": 4,
+  "z": 3,
+  "name": "A081842",
+  "beatty": true,
+  "slope": 3.414,
+  "description": "Starting at 0 with gaps of 4 and 3. A Beatty sequence whose terms are closely approximated by a linear equation with slope related to the silver ratio."
+}

@@ -1,0 +1,11 @@
+{
+  "oeis": "A081841",
+  "j": 0,
+  "x": 0,
+  "y": 3,
+  "z": 2,
+  "name": "A081841",
+  "beatty": true,
+  "slope": 2.414,
+  "description": "A (0,0,3,2)-hiccup sequence starting at 0. Gaps are 3 and 2. Since their difference is 1, it constitutes a Beatty sequence. It has a highly regular repeating rhythm of differences."
+}

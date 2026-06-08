@@ -1,0 +1,13 @@
+{
+  "oeis": "A086377",
+  "j": 1,
+  "x": 1,
+  "y": 3,
+  "z": 2,
+  "name": "A086377 — The BDS Sequence",
+  "beatty": true,
+  "formula": "⌊(1+√2)n − √2/2⌋",
+  "slope": 2.414213562373095,
+  "morphism": "0 → 10, 1 → 100",
+  "description": "The star of the Bosma–Dekking–Steiner theorem (Integers, 2018). This (1,1,3,2)-hiccup sequence has four equivalent characterizations: recursive hiccup definition, positions of 1 in the fixed point of 0→10, 1→100, the Beatty sequence ⌊(1+√2)n − √2/2⌋, and an iterated function sequence starting from 4/π via Lambert's continued fraction. That a sequence from π equals a Beatty sequence with slope 1+√2 was verified numerically over 130,000 terms before being proved."
+}

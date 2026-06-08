@@ -1,0 +1,10 @@
+{
+  "oeis": "A080579",
+  "j": 0,
+  "x": 1,
+  "y": 1,
+  "z": 4,
+  "name": "A080579",
+  "beatty": false,
+  "description": "A (0,1,1,4)-hiccup sequence defined by Benoit Cloitre in the OEIS in 2003. Its differences alternate between 1 and 4. Since |y-z| = 3, it does not represent a Beatty sequence, instead developing a fascinating morphic structure with wider gaps."
+}
