@@ -55,8 +55,8 @@ const index = {};
 seqDatabase.forEach(entry => {
   index[entry.oeis] = `${entry.oeis}.json`;
 });
-const indexPath = path.join(__dirname, 'sequence-index.json');
+const seqIndexPath = path.join(__dirname, 'sequence-index.json');
 fs.writeFileSync(indexPath, JSON.stringify(index, null, 2));
-console.log(`Updated ${indexPath}`);
+console.log(`Updated ${seqIndexPath}`);
 
 console.log('Database extraction complete.');
