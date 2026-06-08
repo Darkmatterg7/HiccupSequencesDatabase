@@ -1575,6 +1575,59 @@
       opacity: 0.5;
       cursor: not-allowed;
     }
+    /* QR code trigger and modal */
+  #qr-trigger {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 48px;
+    height: 48px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1000;
+    transition: transform 0.2s ease, filter 0.2s ease, background 0.2s ease;
+  }
+  #qr-trigger:hover {
+    background: rgba(255,255,255,0.15);
+    filter: brightness(1.1);
+  }
+  #qr-trigger:active {
+    transform: scale(0.95);
+  }
+  #qr-trigger img {
+    width: 28px;
+    height: 28px;
+  }
+
+  /* QR modal overlay */
+  #qr-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(255,255,255,0.92);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  #qr-modal.show {
+    opacity: 1;
+    pointer-events: all;
+  }
+  #qr-modal img {
+    max-width: 90vw;
+    max-height: 90vh;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  }
+
   </style>
 </head>
 <body>
@@ -3253,9 +3306,30 @@
       // Initialize reference table with full database
       renderReferenceTable(seqDatabase);
     });
+    // QR code trigger functionality
+  const qrTrigger = document.getElementById('qr-trigger');
+  const qrModal = document.getElementById('qr-modal');
+  if (qrTrigger && qrModal) {
+    qrTrigger.addEventListener('click', () => {
+      qrModal.classList.add('show');
+    });
+    qrModal.addEventListener('click', (e) => {
+      if (e.target === qrModal) {
+        qrModal.classList.remove('show');
+      }
+    });
+  }
+
   </script>
-  <div style="position:fixed; bottom:20px; right:20px; z-index:1000; background:rgba(0,0,0,0.6); padding:10px; border-radius:8px;">
-    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://darkmatterg7.github.io/HiccupSequencesDatabase/" alt="QR code to site" style="width:150px;height:150px;">
+  <!-- QR trigger (small transparent blob) -->
+  <div id="qr-trigger" title="Show QR code">
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=https://darkmatterg7.github.io/HiccupSequencesDatabase/" alt="QR code">
   </div>
+
+  <!-- QR modal overlay (hidden by default) -->
+  <div id="qr-modal" style="display:none;">
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://darkmatterg7.github.io/HiccupSequencesDatabase/" alt="QR code" style="border-radius:12px;">
+  </div>
+
 </body>
 </html>
