@@ -2001,18 +2001,30 @@
   <!-- JAVASCRIPT LOGIC & DATABASE -->
   <script>
     /* Utility Functions */
-    function showToast(message) {
+    function showToast(message, type = 'info') {
       const toast = document.createElement('div');
-      toast.className = 'toast';
+      toast.className = `toast toast-${type}`;
       toast.textContent = message;
-      document.body.appendChild(toast);
-      setTimeout(() => toast.remove(), 1500);
+
+      // Use toast container if it exists, otherwise append to body
+      const toastContainer = document.getElementById('toast-container') || document.body;
+      if (!document.getElementById('toast-container')) {
+        // Create container if it doesn't exist
+        const container = document.createElement('div');
+        container.id = 'toast-container';
+        document.body.appendChild(container);
+        toastContainer.appendChild(toast);
+      } else {
+        toastContainer.appendChild(toast);
+      }
+
+      setTimeout(() => toast.remove(), 3000);
     }
 
     function copyToClipboard(text) {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).then(() => {
-          showToast('Copied to clipboard!');
+          showToast('Copied to clipboard!', 'success');
         }).catch(() => {
           fallbackCopy(text);
         });
@@ -2029,11 +2041,36 @@
       textarea.select();
       try {
         const successful = document.execCommand('copy');
-        showToast(successful ? 'Copied to clipboard!' : 'Failed to copy');
+        showToast(successful ? 'Copied to clipboard!' : 'Failed to copy', successful ? 'success' : 'error');
       } catch (err) {
-        showToast('Failed to copy');
+        showToast('Failed to copy', 'error');
       }
       document.body.removeChild(textarea);
+    }
+
+    // LocalStorage utility functions for submission persistence
+    function getSubmissionsFromStorage() {
+      const submissions = localStorage.getItem('hiccup_submissions');
+      return submissions ? JSON.parse(submissions) : [];
+    }
+
+    function saveSubmissionsToStorage(submissions) {
+      localStorage.setItem('hiccup_submissions', JSON.stringify(submissions));
+    }
+
+    function addSubmissionToStorage(submission) {
+      const submissions = getSubmissionsFromStorage();
+      submissions.push(submission);
+      saveSubmissionsToStorage(submissions);
+    }
+
+    function updateSubmissionInStorage(updatedSubmission) {
+      const submissions = getSubmissionsFromStorage();
+      const index = submissions.findIndex(sub => sub.id === updatedSubmission.id);
+      if (index !== -1) {
+        submissions[index] = updatedSubmission;
+        saveSubmissionsToStorage(submissions);
+      }
     }
 
     function copyCurrentSequence() {
@@ -3727,16 +3764,54 @@ function trapFocus(element) {
       return;
     }
 
-    // All validations passed - show success
-    showSubmissionValidationSuccess('All validations passed! Preparing submission...');
+    // All validations passed - save submission
+    showSubmissionValidationSuccess('All validations passed! Saving submission...');
 
-    // In a real implementation, this would save to localStorage or send to server
+    // Generate sequence terms for storage and display
+    const seqResult = generateHiccup(j, x, y, z, 20);
+    const sequenceTerms = seqResult.seq;
+
+    // Create submission object
+    const submission = {
+      id: Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+      timestamp: new Date().toISOString(),
+      userProfile: document.getElementById('user-profile-select').value,
+      parameters: { j, x, y, z },
+      metadata: {
+        title: document.getElementById('sub-title').value.trim(),
+        description: document.getElementById('sub-description').value.trim(),
+        references: document.getElementById('sub-references').value.trim(),
+        notes: document.getElementById('sub-notes').value.trim()
+      },
+      mathematicalConnections: {
+        formula: document.getElementById('sub-formula').value.trim(),
+        beatty: document.getElementById('sub-beatty').value,
+        slope: document.getElementById('sub-slope').value.trim(),
+        morphism: document.getElementById('sub-morphism').value.trim()
+      },
+      status: 'pending_review',
+      sequenceTerms: sequenceTerms,
+      isDuplicate: false // We already checked for duplicates above
+    };
+
+    // Save to localStorage
+    addSubmissionToStorage(submission);
+
+    // Show success and close modal
     setTimeout(() => {
       showSubmissionValidationSuccess('Sequence submitted successfully! It will appear in "My Submissions" pending review.');
       // Close modal after brief delay
       setTimeout(() => {
         closeSubmissionModal();
-        showToast('Sequence submitted successfully!');
+        showToast('Sequence submitted successfully!', 'success');
+        // Refresh submission tracking modal if it's open
+        if (submissionTrackingModal && submissionTrackingModal.open) {
+          loadSubmissionTrackingData();
+        }
+        // Refresh moderation modal if it's open
+        if (moderationModal && moderationModal.open) {
+          loadModerationData();
+        }
       }, 1500);
     }, 1000);
   }
@@ -3815,21 +3890,193 @@ function trapFocus(element) {
     const content = document.getElementById('submission-tracking-content');
     if (!content) return;
 
-    // In a real app, this would load from localStorage or API
+    const submissions = getSubmissionsFromStorage();
+
+    if (submissions.length === 0) {
+      content.innerHTML = `
+        <p>No submissions yet. Use the submit button above to submit your first sequence!</p>
+      `;
+      return;
+    }
+
+    // Sort by timestamp descending (newest first)
+    const sortedSubmissions = [...submissions].sort((a, b) =>
+      new Date(b.timestamp) - new Date(a.timestamp)
+    );
+
     content.innerHTML = `
-      <p>No submissions yet. Use the submit button above to submit your first sequence!</p>
+      <div class="submissions-list">
+        ${sortedSubmissions.map(sub => `
+          <div class="submission-item">
+            <div class="submission-header">
+              <h4>${sub.metadata.title || 'Untitled Sequence'}</h4>
+              <span class="status-badge status-${sub.status}">${sub.status.replace('_', ' ').toUpperCase()}</span>
+            </div>
+            <div class="submission-meta">
+              <p><strong>Parameters:</strong> j=${sub.parameters.j}, x=${sub.parameters.x}, y=${sub.parameters.y}, z=${sub.parameters.z}</p>
+              <p><strong>Submitted:</strong> ${new Date(sub.timestamp).toLocaleString()}</p>
+              <p><strong>Role:</strong> ${sub.userProfile}</p>
+              ${sub.reviewerNotes ? `<p><strong>Reviewer Notes:</strong> ${sub.reviewerNotes}</p>` : ''}
+            </div>
+            <div class="submission-terms">
+              <strong>First 20 terms:</strong> ${sub.sequenceTerms.join(', ')}
+            </div>
+            ${sub.status === 'pending_review' && (document.getElementById('user-profile-select')?.value === 'reviewer' || document.getElementById('user-profile-select')?.value === 'admin') ? `
+            <div class="submission-actions">
+              <button onclick="approveSubmission('${sub.id}')" class="btn btn-success">Approve</button>
+              <button onclick="requestChangesSubmission('${sub.id}')" class="btn btn-warning">Request Changes</button>
+              <button onclick="rejectSubmission('${sub.id}')" class="btn btn-danger">Reject</button>
+            </div>
+            ` : ''}
+          </div>
+        `).join('')}
+      </div>
     `;
   }
 
-  // Load moderation data (mock data)
+  // Load moderation data from localStorage
   function loadModerationData() {
     const content = document.getElementById('moderation-content');
     if (!content) return;
 
-    // In a real app, this would load from localStorage or API
+    const submissions = getSubmissionsFromStorage();
+    const pendingSubmissions = submissions.filter(sub => sub.status === 'pending_review');
+
+    if (pendingSubmissions.length === 0) {
+      content.innerHTML = `
+        <p>No pending submissions for review.</p>
+      `;
+      return;
+    }
+
+    // Sort by timestamp descending (newest first)
+    const sortedSubmissions = [...pendingSubmissions].sort((a, b) =>
+      new Date(b.timestamp) - new Date(a.timestamp)
+    );
+
     content.innerHTML = `
-      <p>No pending submissions for review.</p>
+      <div class="moderation-list">
+        <p><strong>${sortedSubmissions.length}</strong> submission(s) awaiting review</p>
+        ${sortedSubmissions.map(sub => `
+          <div class="moderation-item">
+            <div class="moderation-header">
+              <h4>${sub.metadata.title || 'Untitled Sequence'}</h4>
+              <span class="submission-info">Submitted by ${sub.userProfile} on ${new Date(sub.timestamp).toLocaleString()}</span>
+            </div>
+            <div class="moderation-meta">
+              <p><strong>Parameters:</strong> j=${sub.parameters.j}, x=${sub.parameters.x}, y=${sub.parameters.y}, z=${sub.parameters.z}</p>
+              <p><strong>Description:</strong> ${sub.metadata.description}</p>
+            </div>
+            <div class="moderation-terms">
+              <strong>First 10 terms:</strong> ${sub.sequenceTerms.slice(0, 10).join(', ')}...
+            </div>
+            <div class="moderation-actions">
+              <textarea id="reviewer-notes-${sub.id}" placeholder="Optional feedback for the submitter..." rows="2" class="input-field"></textarea>
+              <div style="margin-top:0.75rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+                <button onclick="approveSubmission('${sub.id}')" class="btn btn-success">Approve</button>
+                <button onclick="requestChangesSubmission('${sub.id}')" class="btn btn-warning">Request Changes</button>
+                <button onclick="rejectSubmission('${sub.id}')" class="btn btn-danger">Reject</button>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
     `;
+  }
+
+  // Approve a submission
+  function approveSubmission(submissionId) {
+    const submissions = getSubmissionsFromStorage();
+    const submissionIndex = submissions.findIndex(sub => sub.id === submissionId);
+
+    if (submissionIndex !== -1) {
+      const notesElement = document.getElementById(`reviewer-notes-${submissionId}`);
+      const reviewerNotes = notesElement ? notesElement.value.trim() : '';
+
+      submissions[submissionIndex] = {
+        ...submissions[submissionIndex],
+        status: 'approved',
+        reviewerNotes: reviewerNotes,
+        reviewedAt: new Date().toISOString(),
+        reviewedBy: 'current_user' // In a real app, this would be the actual reviewer
+      };
+
+      saveSubmissionsToStorage(submissions);
+      showToast('Submission approved!', 'success');
+
+      // Refresh modals if open
+      if (submissionTrackingModal && submissionTrackingModal.open) {
+        loadSubmissionTrackingData();
+      }
+      if (moderationModal && moderationModal.open) {
+        loadModerationData();
+      }
+    }
+  }
+
+  // Request changes for a submission
+  function requestChangesSubmission(submissionId) {
+    const submissions = getSubmissionsFromStorage();
+    const submissionIndex = submissions.findIndex(sub => sub.id === submissionId);
+
+    if (submissionIndex !== -1) {
+      const notesElement = document.getElementById(`reviewer-notes-${submissionId}`);
+      const reviewerNotes = notesElement ? notesElement.value.trim() : '';
+
+      if (!reviewerNotes) {
+        showToast('Please provide feedback on what changes are needed', 'error');
+        return;
+      }
+
+      submissions[submissionIndex] = {
+        ...submissions[submissionIndex],
+        status: 'changes_requested',
+        reviewerNotes: reviewerNotes,
+        reviewedAt: new Date().toISOString(),
+        reviewedBy: 'current_user'
+      };
+
+      saveSubmissionsToStorage(submissions);
+      showToast('Changes requested!', 'warning');
+
+      // Refresh modals if open
+      if (submissionTrackingModal && submissionTrackingModal.open) {
+        loadSubmissionTrackingData();
+      }
+      if (moderationModal && moderationModal.open) {
+        loadModerationData();
+      }
+    }
+  }
+
+  // Reject a submission
+  function rejectSubmission(submissionId) {
+    const submissions = getSubmissionsFromStorage();
+    const submissionIndex = submissions.findIndex(sub => sub.id === submissionId);
+
+    if (submissionIndex !== -1) {
+      const notesElement = document.getElementById(`reviewer-notes-${submissionId}`);
+      const reviewerNotes = notesElement ? notesElement.value.trim() : '';
+
+      submissions[submissionIndex] = {
+        ...submissions[submissionIndex],
+        status: 'rejected',
+        reviewerNotes: reviewerNotes,
+        reviewedAt: new Date().toISOString(),
+        reviewedBy: 'current_user'
+      };
+
+      saveSubmissionsToStorage(submissions);
+      showToast('Submission rejected!', 'error');
+
+      // Refresh modals if open
+      if (submissionTrackingModal && submissionTrackingModal.open) {
+        loadSubmissionTrackingData();
+      }
+      if (moderationModal && moderationModal.open) {
+        loadModerationData();
+      }
+    }
   }
 
   // Close modals with Escape key
