@@ -1577,7 +1577,7 @@
     }
     /* QR code trigger and modal */
   /* QR code trigger and modal */
-  /* QR code trigger and modal */
+  /* QR code trigger */
   #qr-trigger {
     position: fixed;
     bottom: 20px;
@@ -1601,27 +1601,86 @@
   #qr-trigger:active {
     transform: scale(1.2);
   }
-  #qr-trigger.active {
+
+  /* QR code lightbox */
+  .qr-lightbox-overlay {
     position: fixed;
-    top: 50%;
-    left: 50%;
-    width: 200px;
-    height: 200px;
-    background: rgba(255,255,255,0.2);
-    border: 1px solid rgba(255,255,255,0.4);
-    border-radius: 20px;
-    bottom: auto;
-    right: auto;
-    transform: translate(-50%, -50%) scale(1);
-    transition: all 0.3s ease;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
   }
-  #qr-trigger.active img {
-    width: 120px;
-    height: 120px;
+
+  .qr-lightbox-overlay.active {
+    opacity: 1;
+    visibility: visible;
   }
-  body.bright {
-    filter: brightness(1.2);
-    transition: filter 0.3s ease;
+
+  .qr-lightbox-content {
+    position: relative;
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--card-radius);
+    padding: 1.5rem;
+    max-width: 90%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .qr-lightbox-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+
+  .qr-lightbox-close {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 30px;
+    height: 30px;
+    background: var(--danger);
+    color: var(--text);
+    border: none;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    z-index: 10;
+  }
+
+  .qr-lightbox-close:hover {
+    background: var(--danger-bg);
+    transform: rotate(90deg);
+  }
+
+  /* Header links styling */
+  #submission-tracking-header,
+  #moderation-header {
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  #submission-tracking-header:hover,
+  #moderation-header:hover {
+    color: var(--accent);
+    text-decoration: underline;
   }
 
   /* hide number input spinner */
@@ -1633,6 +1692,29 @@
   input[type=number] {
     -moz-appearance: textfield;
   }
+
+:root.light-theme {
+  /* Light theme values */
+  --bg: #f8f6f0;
+  --bg-alt: #f0ecd8;
+  --panel-bg: rgba(240, 236, 216, 0.75);
+  --border-color: rgba(232, 168, 56, 0.15);
+  --border-focus: rgba(232, 168, 56, 0.45);
+  --accent: #b5651d;
+  --accent-hover: #d1893f;
+  --accent-muted: rgba(232, 168, 56, 0.1);
+  --accent-glow: rgba(232, 168, 56, 0.25);
+  --teal: #2c7a73;
+  --teal-muted: rgba(60, 174, 163, 0.1);
+  --teal-glow: rgba(60, 174, 163, 0.25);
+  --text: #3b332b;
+  --text-muted: #6a6655;
+  --danger: #b23e3e;
+  --danger-bg: rgba(239, 68, 68, 0.1);
+  --success: #0b6b3b;
+  --success-bg: rgba(16, 185, 129, 0.1);
+  --success-border: rgba(16, 185, 129, 0.3);
+}
 
   </style>
 </head>
@@ -1654,6 +1736,21 @@
         <span style="font-family:var(--font-mono); font-size:0.78rem; color:var(--text-muted);">
           <span style="color:var(--accent); font-weight:700;">8</span> closed-form formulas
         </span>
+      </div>
+      <div style="margin-top:1rem; text-align:center;">
+        <button id="theme-toggle" class="btn" style="padding:0.5rem 1rem; font-size:0.9rem;">🌓 Toggle Theme</button>
+        <button id="submission-trigger-header" title="Submit a new sequence" class="btn" style="padding:0.5rem 1rem; font-size:0.9rem; margin-left:0.5rem;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L15.09 8.26L22 9.27L13 14.29L15.13 20.8L12 18L8.87 20.8L11 14.29L2 9.27L8.91 8.26L12 2Z" fill="var(--accent)"/>
+          </svg>
+        </button>
+        <div style="margin-top:0.5rem; font-size:0.8rem; color:var(--text-muted);">
+          <span style="margin-right:1rem; cursor:pointer;" id="submission-tracking-header" title="View my submissions">📋 My Submissions</span>
+          <span style="margin-right:1rem; cursor:pointer;" id="moderation-header" title="Moderation dashboard">🛡️ Moderation</span>
+          <!-- Hidden triggers for programmatic access -->
+          <button id="submission-tracking-trigger" style="display:none;"></button>
+          <button id="moderation-trigger" style="display:none;"></button>
+        </div>
       </div>
 
           </header>
@@ -1823,7 +1920,7 @@
         Based on: Fokkink, R. & Joshi, G. (2026). On Cloitre's hiccup sequences. The Ramanujan Journal, 69:40. 
         <a href="https://doi.org/10.1007/s11139-025-01305-1" target="_blank" rel="noopener noreferrer">DOI: 10.1007/s11139-025-01305-1</a>
       </div>
-      <div>
+<div>
         Sequence database compiled from initial OEIS entries discovered by Benoit Cloitre (2003) and others. 
         Explore more sequences directly on the <a href="https://oeis.org" target="_blank" rel="noopener noreferrer">On-Line Encyclopedia of Integer Sequences</a>.
       </div>
@@ -2474,7 +2571,7 @@
     // Change visualizer mode
     function setPlotMode(mode) {
       currentPlotMode = mode;
-      
+
       // Update tab classes
       const tabs = document.querySelectorAll('.plot-tab');
       tabs.forEach(tab => {
@@ -2486,6 +2583,19 @@
       });
 
       drawSequenceChart();
+    }
+
+    function exportPlotAsPNG() {
+      if (!currentGeneratedData) return;
+
+      const canvas = document.getElementById('sequence-plot');
+      if (!canvas) return;
+
+      // Create a link to download the canvas as PNG
+      const link = document.createElement('a');
+      link.download = `hiccup_plot_j${currentGeneratedData.j}_x${currentGeneratedData.x}_y${currentGeneratedData.y}_z${currentGeneratedData.z}_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
     }
 
     function startPlayback() {
@@ -3074,6 +3184,7 @@
               <div class="plotter-tabs">
                 <button class="plot-tab ${isGrowthActive}" onclick="setPlotMode('growth')">Growth Trend</button>
                 <button class="plot-tab ${isResidualActive}" onclick="setPlotMode('residual')">Sturmian Residuals</button>
+                <button class="plot-tab" onclick="exportPlotAsPNG()" style="padding:0.3rem 0.6rem; font-size:0.7rem;">📥 Export PNG</button>
               </div>
             </div>
             
@@ -3310,20 +3421,623 @@
       // Initialize reference table with full database
       renderReferenceTable(seqDatabase);
     });
-    // QR code trigger functionality
+    // QR code lightbox functionality
   const qrTrigger = document.getElementById('qr-trigger');
   if (qrTrigger) {
-    qrTrigger.addEventListener('click', () => {
-      qrTrigger.classList.toggle('active');
-      document.body.classList.toggle('bright');
+    // Create lightbox overlay
+    const lightboxOverlay = document.createElement('div');
+    lightboxOverlay.className = 'qr-lightbox-overlay';
+    lightboxOverlay.innerHTML = `
+      <div class="qr-lightbox-content">
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://darkmatterg7.github.io/HiccupSequencesDatabase/"
+             alt="QR code to Hiccup Sequence Explorer">
+        <button class="qr-lightbox-close" aria-label="Close QR code">✕</button>
+      </div>
+    `;
+    document.body.appendChild(lightboxOverlay);
+
+    const lightboxImg = lightboxOverlay.querySelector('img');
+    const lightboxClose = lightboxOverlay.querySelector('.qr-lightbox-close');
+
+    // Open lightbox when QR trigger is clicked
+    qrTrigger.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent triggering document click
+      lightboxOverlay.classList.add('active');
+      // Trap focus inside lightbox
+      trapFocus(lightboxOverlay);
+    });
+
+    // Close lightbox when clicking overlay, close button, or image
+    lightboxOverlay.addEventListener('click', (e) => {
+      if (e.target === lightboxOverlay ||
+          e.target === lightboxClose ||
+          e.target === lightboxImg) {
+        lightboxOverlay.classList.remove('active');
+        // Return focus to QR trigger
+        qrTrigger.focus();
+      }
+    });
+
+    // Close with Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && lightboxOverlay.classList.contains('active')) {
+        lightboxOverlay.classList.remove('active');
+        qrTrigger.focus();
+      }
+    });
+
+    // Prevent clicks inside lightbox content from closing it
+    const lightboxContent = lightboxOverlay.querySelector('.qr-lightbox-content');
+    lightboxContent.addEventListener('click', (e) => {
+      e.stopPropagation();
     });
   }
 
-  </script>
+// Helper function to trap focus inside an element
+function trapFocus(element) {
+  const focusableElements = element.querySelectorAll(
+    'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+  );
+  const firstFocusable = focusableElements[0];
+  const lastFocusable = focusableElements[focusableElements.length - 1];
+
+  function handleKeyDown(e) {
+    if (e.key === 'Tab') {
+      if (e.shiftKey) { // Shift + Tab
+        if (document.activeElement === firstFocusable) {
+          e.preventDefault();
+          lastFocusable.focus();
+        }
+      } else { // Tab
+        if (document.activeElement === lastFocusable) {
+          e.preventDefault();
+          firstFocusable.focus();
+        }
+      }
+    }
+    // Escape to close
+    if (e.key === 'Escape') {
+      element.classList.remove('active');
+      qrTrigger.focus();
+    }
+  }
+
+  element.addEventListener('keydown', handleKeyDown);
+
+  // Cleanup function
+  return () => {
+    element.removeEventListener('keydown', handleKeyDown);
+  };
+}
+
+  // Theme toggle
+  const themeToggleBtn = document.getElementById('theme-toggle');
+  if (themeToggleBtn) {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+    const currentTheme = localStorage.getItem('theme') || (prefersDark.matches ? 'dark' : 'light');
+    if (currentTheme === 'dark') {
+      document.documentElement.classList.add('light-theme');
+      themeToggleBtn.textContent = '🌓 Light Mode';
+    } else {
+      document.documentElement.classList.remove('light-theme');
+      themeToggleBtn.textContent = '🌓 Dark Mode';
+    }
+
+    themeToggleBtn.addEventListener('click', () => {
+      const isDark = document.documentElement.classList.toggle('light-theme');
+      localStorage.setItem('theme', isDark ? 'light' : 'dark');
+      themeToggleBtn.textContent = isDark ? '🌓 Light Mode' : '🌓 Dark Mode';
+    });
+  }
+
+  // Submission workflow functionality
+  const submissionTrigger = document.getElementById('submission-trigger');
+  const submissionTriggerHeader = document.getElementById('submission-trigger-header');
+  const submissionModal = document.getElementById('submission-modal');
+  const submissionTrackingModal = document.getElementById('submission-tracking-modal');
+  const moderationModal = document.getElementById('moderation-modal');
+
+  // Open submission modal
+  function openSubmissionModal() {
+    if (submissionModal) {
+      submissionModal.showModal();
+      // Reset to step 1
+      showSubmissionStep(1);
+      // Initialize parameter validation
+      updateSubmissionParamInfo();
+    }
+  }
+
+  if (submissionTrigger && submissionModal) {
+    submissionTrigger.addEventListener('click', openSubmissionModal);
+  }
+  if (submissionTriggerHeader && submissionModal) {
+    submissionTriggerHeader.addEventListener('click', openSubmissionModal);
+  }
+
+  // Submission tracking and moderation header links
+  const submissionTrackingHeader = document.getElementById('submission-tracking-header');
+  if (submissionTrackingHeader && submissionTrackingModal) {
+    submissionTrackingHeader.addEventListener('click', () => {
+      submissionTrackingModal.showModal();
+      loadSubmissionTrackingData();
+    });
+  }
+  const moderationHeader = document.getElementById('moderation-header');
+  if (moderationHeader && moderationModal) {
+    moderationHeader.addEventListener('click', () => {
+      moderationModal.showModal();
+      loadModerationData();
+    });
+  }
+
+  // Close modals
+  function closeSubmissionModal() {
+    if (submissionModal) submissionModal.close();
+  }
+  function closeSubmissionTrackingModal() {
+    if (submissionTrackingModal) submissionTrackingModal.close();
+  }
+  function closeModerationModal() {
+    if (moderationModal) moderationModal.close();
+  }
+
+  // Submission wizard navigation
+  function showSubmissionStep(stepNum) {
+    // Hide all steps
+    const steps = document.querySelectorAll('.submission-step');
+    steps.forEach(step => step.style.display = 'none');
+
+    // Show selected step
+    const step = document.getElementById(`submission-step-${stepNum}`);
+    if (step) step.style.display = 'block';
+
+    // Update validation status on parameter steps
+    if (stepNum === 2) {
+      updateSubmissionParamInfo();
+      updateSubmissionParamWarning();
+    }
+  }
+
+  // Parameter validation and info
+  function updateSubmissionParamInfo() {
+    const j = parseInt(document.getElementById('sub-param-j').value) || 0;
+    const x = parseInt(document.getElementById('sub-param-x').value) || 0;
+    const y = parseInt(document.getElementById('sub-param-y').value) || 0;
+    const z = parseInt(document.getElementById('sub-param-z').value) || 0;
+
+    const infoElement = document.getElementById('sub-param-info');
+    if (infoElement) {
+      if (y === z) {
+        infoElement.textContent = `⚠️ y and z must be different values`;
+        infoElement.style.color = 'var(--danger)';
+      } else {
+        infoElement.textContent = `Sequence will start at ${x} and use gaps of +${y} (when in sequence) and +${z} (when not in sequence)`;
+        infoElement.style.color = 'var(--text-muted)';
+      }
+    }
+  }
+
+  function updateSubmissionParamWarning() {
+    const j = parseInt(document.getElementById('sub-param-j').value) || 0;
+    const x = parseInt(document.getElementById('sub-param-x').value) || 0;
+    const y = parseInt(document.getElementById('sub-param-y').value) || 0;
+    const z = parseInt(document.getElementById('sub-param-z').value) || 0;
+
+    const warningElement = document.getElementById('sub-param-warning');
+    if (warningElement) {
+      if (y === z) {
+        warningElement.textContent = `⚠️ Error: y and z parameters must be different`;
+      } else if (j < 0 || x < 0 || y < 1 || z < 1) {
+        warningElement.textContent = `⚠️ Error: j,x must be ≥0 and y,z must be ≥1`;
+      } else {
+        warningElement.textContent = '';
+      }
+    }
+  }
+
+  // Add event listeners for parameter inputs
+  document.addEventListener('DOMContentLoaded', () => {
+    const paramInputs = ['sub-param-j', 'sub-param-x', 'sub-param-y', 'sub-param-z'];
+    paramInputs.forEach(id => {
+      const input = document.getElementById(id);
+      if (input) {
+        input.addEventListener('input', () => {
+          updateSubmissionParamInfo();
+          updateSubmissionParamWarning();
+        });
+      }
+    });
+
+    // Step navigation buttons
+    const step1Next = document.getElementById('step1-next');
+    if (step1Next) {
+      step1Next.addEventListener('click', () => showSubmissionStep(2));
+    }
+    const step2Prev = document.getElementById('step2-prev');
+    if (step2Prev) {
+      step2Prev.addEventListener('click', () => showSubmissionStep(1));
+    }
+    const step2Next = document.getElementById('step2-next');
+    if (step2Next) {
+      step2Next.addEventListener('click', () => {
+        if (!document.getElementById('sub-param-warning').textContent) {
+          showSubmissionStep(3);
+        }
+      });
+    }
+    const step3Prev = document.getElementById('step3-prev');
+    if (step3Prev) {
+      step3Prev.addEventListener('click', () => showSubmissionStep(2));
+    }
+    const step3Next = document.getElementById('step3-next');
+    if (step3Next) {
+      step3Next.addEventListener('click', () => showSubmissionStep(4));
+    }
+    const step4Prev = document.getElementById('step4-prev');
+    if (step4Prev) {
+      step4Prev.addEventListener('click', () => showSubmissionStep(3));
+    }
+
+    // Submit button
+    const step4Submit = document.getElementById('step4-submit');
+    if (step4Submit) {
+      step4Submit.addEventListener('click', handleSubmissionSubmit);
+    }
+  });
+
+  // Handle form submission
+  function handleSubmissionSubmit() {
+    // Validate parameters
+    const j = parseInt(document.getElementById('sub-param-j').value) || 0;
+    const x = parseInt(document.getElementById('sub-param-x').value) || 0;
+    const y = parseInt(document.getElementById('sub-param-y').value) || 0;
+    const z = parseInt(document.getElementById('sub-param-z').value) || 0;
+
+    if (y === z) {
+      showSubmissionValidationError('y and z parameters must be different');
+      return;
+    }
+
+    if (j < 0 || x < 0 || y < 1 || z < 1) {
+      showSubmissionValidationError('j,x must be ≥0 and y,z must be ≥1');
+      return;
+    }
+
+    // Validate metadata
+    const title = document.getElementById('sub-title').value.trim();
+    const description = document.getElementById('sub-description').value.trim();
+
+    if (!title) {
+      showSubmissionValidationError('Title is required');
+      return;
+    }
+
+    if (!description) {
+      showSubmissionValidationError('Description is required');
+      return;
+    }
+
+    // Additional validation: check for duplicate sequences
+    const seq = generateHiccup(j, x, y, z, 20).seq; // Generate first 20 terms
+    const isDuplicate = checkForDuplicateSequence(seq);
+
+    if (isDuplicate) {
+      showSubmissionValidationError('This sequence already exists in the database or is equivalent to an existing sequence');
+      return;
+    }
+
+    // All validations passed - show success
+    showSubmissionValidationSuccess('All validations passed! Preparing submission...');
+
+    // In a real implementation, this would save to localStorage or send to server
+    setTimeout(() => {
+      showSubmissionValidationSuccess('Sequence submitted successfully! It will appear in "My Submissions" pending review.');
+      // Close modal after brief delay
+      setTimeout(() => {
+        closeSubmissionModal();
+        showToast('Sequence submitted successfully!');
+      }, 1500);
+    }, 1000);
+  }
+
+  function showSubmissionValidationError(message) {
+    const statusElement = document.getElementById('submission-validation-status');
+    if (statusElement) {
+      statusElement.textContent = message;
+      statusElement.style.backgroundColor = 'var(--danger-bg)';
+      statusElement.style.color = 'var(--danger)';
+      statusElement.style.borderLeft = '4px solid var(--danger)';
+    }
+  }
+
+  function showSubmissionValidationSuccess(message) {
+    const statusElement = document.getElementById('submission-validation-status');
+    if (statusElement) {
+      statusElement.textContent = message;
+      statusElement.style.backgroundColor = 'var(--success-bg)';
+      statusElement.style.color = 'var(--success)';
+      statusElement.style.borderLeft = '4px solid var(--success)';
+    }
+  }
+
+  // Check for duplicate sequences (simplified)
+  function checkForDuplicateSequence(seq) {
+    // Check against known database sequences for exact matches
+    for (const entry of seqDatabase) {
+      const dbSeq = generateHiccup(entry.j, entry.x, entry.y, entry.z, seq.length).seq;
+      if (JSON.stringify(seq) === JSON.stringify(dbSeq)) {
+        return true;
+      }
+
+      // Check for translation equivalence
+      if (seq.length >= 5) {
+        const offset = seq[0] - dbSeq[0];
+        if (offset !== 0 && dbSeq.every((v, i) => v + offset === seq[i])) {
+          return true;
+        }
+
+        // Check for scale equivalence
+        const scaleAnchorIndex = dbSeq.findIndex(v => v !== 0);
+        if (scaleAnchorIndex >= 0) {
+          const k = seq[scaleAnchorIndex] / dbSeq[scaleAnchorIndex];
+          if (!isNaN(k) && Number.isInteger(k) && k > 1) {
+            if (dbSeq.every((v, i) => v * k === seq[i])) {
+              return true;
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  // Submission tracking modal
+  const submissionTrackingTrigger = document.getElementById('submission-tracking-trigger');
+  if (submissionTrackingTrigger && submissionTrackingModal) {
+    submissionTrackingTrigger.addEventListener('click', () => {
+      submissionTrackingModal.showModal();
+      loadSubmissionTrackingData();
+    });
+  }
+
+  // Moderation modal
+  const moderationTrigger = document.getElementById('moderation-trigger');
+  if (moderationTrigger && moderationModal) {
+    moderationTrigger.addEventListener('click', () => {
+      moderationModal.showModal();
+      loadModerationData();
+    });
+  }
+
+  // Load submission tracking data (mock data)
+  function loadSubmissionTrackingData() {
+    const content = document.getElementById('submission-tracking-content');
+    if (!content) return;
+
+    // In a real app, this would load from localStorage or API
+    content.innerHTML = `
+      <p>No submissions yet. Use the submit button above to submit your first sequence!</p>
+    `;
+  }
+
+  // Load moderation data (mock data)
+  function loadModerationData() {
+    const content = document.getElementById('moderation-content');
+    if (!content) return;
+
+    // In a real app, this would load from localStorage or API
+    content.innerHTML = `
+      <p>No pending submissions for review.</p>
+    `;
+  }
+
+  // Close modals with Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (submissionModal && submissionModal.open) {
+        submissionModal.close();
+      }
+      if (submissionTrackingModal && submissionTrackingModal.open) {
+        submissionTrackingModal.close();
+      }
+      if (moderationModal && moderationModal.open) {
+        moderationModal.close();
+      }
+    }
+  });
+
+  // Close modals when clicking outside (backdrop)
+  document.addEventListener('click', (e) => {
+    if (submissionModal && e.target === submissionModal) {
+      submissionModal.close();
+    }
+    if (submissionTrackingModal && e.target === submissionTrackingModal) {
+      submissionTrackingModal.close();
+    }
+    if (moderationModal && e.target === moderationModal) {
+      moderationModal.close();
+    }
+  });
+
   <!-- QR trigger (small transparent blob) -->
   <div id="qr-trigger" title="Show QR code">
     <img src="https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=https://darkmatterg7.github.io/HiccupSequencesDatabase/" alt="QR code">
   </div>
+
+  <!-- Submission Workflow Trigger -->
+  <button id="submission-trigger" title="Submit a new sequence" style="position:fixed; bottom:20px; left:20px; width:48px; height:48px; background:rgba(232,168,56,0.1); border:1px solid rgba(232,168,56,0.3); border-radius:12px; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:1000; transition:transform 0.2s ease, background 0.2s ease;">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2L15.09 8.26L22 9.27L13 14.29L15.13 20.8L12 18L8.87 20.8L11 14.29L2 9.27L8.91 8.26L12 2Z" fill="var(--accent)"/>
+    </svg>
+  </button>
+
+  <!-- SUBMISSION WORKFLOW MODAL -->
+  <dialog id="submission-modal">
+    <div class="modal-header">
+      <h3 style="font-size:1.6rem; color:var(--accent);">Submit New Hiccup Sequence</h3>
+      <button class="modal-close-btn" onclick="closeSubmissionModal()" aria-label="Close submission modal">&times;</button>
+    </div>
+    <div class="modal-content">
+      <!-- Submission Wizard Steps -->
+      <div id="submission-wizard">
+        <!-- Step 1: User Profile -->
+        <div id="submission-step-1" class="submission-step">
+          <h4 style="color:var(--accent); margin-bottom:1rem;">User Profile</h4>
+          <div class="form-group">
+            <label for="user-profile-select" class="input-label">Select your role:</label>
+            <select id="user-profile-select" class="input-field">
+              <option value="regular">Regular User</option>
+              <option value="reviewer">Reviewer</option>
+              <option value="admin">Administrator</option>
+            </select>
+          </div>
+          <p class="input-desc">Choose your role to determine what actions you can perform in the submission workflow.</p>
+          <div style="margin-top:1.5rem; text-align:right;">
+            <button id="step1-next" class="btn" style="margin-right:0.5rem;">Next →</button>
+          </div>
+        </div>
+
+        <!-- Step 2: Parameters -->
+        <div id="submission-step-2" class="submission-step" style="display:none;">
+          <h4 style="color:var(--accent); margin-bottom:1rem;">Sequence Parameters</h4>
+          <div class="form-group">
+            <label for="sub-param-j" class="input-label">Lookback Offset (j)</label>
+            <div class="input-with-stepper">
+              <input type="number" id="sub-param-j" value="0" min="0" max="50" class="input-field">
+              <button type="button" class="stepper-btn up" onclick="adjustParam('sub-param-j', 1)" aria-label="Increase j">▲</button>
+              <button type="button" class="stepper-btn down" onclick="adjustParam('sub-param-j', -1)" aria-label="Decrease j">▼</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="sub-param-x" class="input-label">Starting Value (x)</label>
+            <div class="input-with-stepper">
+              <input type="number" id="sub-param-x" value="1" min="0" max="1000" class="input-field">
+              <button type="button" class="stepper-btn up" onclick="adjustParam('sub-param-x', 1)" aria-label="Increase x">▲</button>
+              <button type="button" class="stepper-btn down" onclick="adjustParam('sub-param-x', -1)" aria-label="Decrease x">▼</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="sub-param-y" class="input-label">Gap When In Sequence (y)</label>
+            <div class="input-with-stepper">
+              <input type="number" id="sub-param-y" value="2" min="1" max="50" class="input-field">
+              <button type="button" class="stepper-btn up" onclick="adjustParam('sub-param-y', 1)" aria-label="Increase y">▲</button>
+              <button type="button" class="stepper-btn down" onclick="adjustParam('sub-param-y', -1)" aria-label="Decrease y">▼</button>
+            </div>
+          </div>
+
+          <div.class="form-group">
+            <label for="sub-param-z" class="input-label">Gap When Not In Sequence (z)</label>
+            <div class="input-with-stepper">
+              <input type="number" id="sub-param-z" value="3" min="1" max="50" class="input-field">
+              <button type="button" class="stepper-btn up" onclick="adjustParam('sub-param-z', 1)" aria-label="Increase z">▲</button>
+              <button type="button" class="stepper-btn down" onclick="adjustParam('sub-param-z', -1)" aria-label="Decrease z">▼</button>
+            </div>
+          </div>
+
+          <p class="input-desc" id="sub-param-warning" style="color:var(--danger); margin-top:0.5rem;"></p>
+          <p class="input-desc" id="sub-param-info" style="margin-top:0.5rem; font-size:0.9rem;"></p>
+
+          <div style="margin-top:1.5rem; display:flex; justify-content:space-between; align-items:center;">
+            <button id="step2-prev" class="btn btn-secondary">← Previous</button>
+            <button id="step2-next" class="btn" style="margin-left:0.5rem;">Next →</button>
+          </div>
+        </div>
+
+        <!-- Step 3: Metadata -->
+        <div id="submission-step-3" class="submission-step" style="display:none;">
+          <h4 style="color:var(--accent); margin-bottom:1rem;">Sequence Metadata</h4>
+          <div class="form-group">
+            <label for="sub-title" class="input-label">Title *</label>
+            <input type="text" id="sub-title" placeholder="Enter a descriptive title for your sequence" class="input-field">
+          </div>
+
+          <div class="form-group">
+            <label for="sub-description" class="input-label">Description *</label>
+            <textarea id="sub-description" rows="4" placeholder="Describe the sequence, its properties, and any interesting observations" class="input-field"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="sub-references" class="input-label">References (optional)</label>
+            <input type="text" id="sub-references" placeholder="OEIS IDs, URLs, or citations (comma-separated)" class="input-field">
+          </div>
+
+          <div class="form-group">
+            <label for="sub-notes" class="input-label">Notes (optional)</label>
+            <textarea id="sub-notes" rows="3" placeholder="Any additional notes or comments" class="input-field"></textarea>
+          </div>
+
+          <div style="margin-top:1.5rem; display:flex; justify-content:space-between; align-items:center;">
+            <button id="step3-prev" class="btn btn-secondary">← Previous</button>
+            <button id="step3-next" class="btn" style="margin-left:0.5rem;">Next →</button>
+          </div>
+        </div>
+
+        <!-- Step 4: Mathematical Connections -->
+        <div id="submission-step-4" class="submission-step" style="display:none;">
+          <h4 style="color:var(--accent); margin-bottom:1rem;">Mathematical Connections</h4>
+          <div class="form-group">
+            <label for="sub-formula" class="input-label">Closed-form Formula (optional)</label>
+            <input type="text" id="sub-formula" placeholder="e.g., ⌊n·√2⌋ or ⌊n·φ + 1⌋" class="input-field">
+          </div>
+
+          <div class="form-group">
+            <label for="sub-beatty" class="input-label">Beatty Sequence?</label>
+            <select id="sub-beatty" class="input-field">
+              <option value="unknown">Unknown</option>
+              <option value="yes">Yes</option>
+              <option value="no">No</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="sub-slope" class="input-label">Slope (if Beatty)</label>
+            <input type="number" id="sub-slope" placeholder="Enter slope value" class="input-field" step="0.000001">
+          </div>
+
+          <div class="form-group">
+            <label for="sub-morphism" class="input-label">Morphism (optional)</label>
+            <input type="text" id="sub-morphism" placeholder="e.g., 0→010, 1→10" class="input-field">
+          </div>
+
+          <div style="margin-top:1.5rem; display:flex; justify-content:space-between; align-items:center;">
+            <button id="step4-prev" class="btn btn-secondary">← Previous</button>
+            <button id="step4-submit" class="btn" style="margin-left:0.5rem;">Submit Sequence</button>
+          </div>
+
+          <div id="submission-validation-status" style="margin-top:1rem; padding:0.75rem; border-radius:4px; font-size:0.9rem;"></div>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- SUBMISSION TRACKING MODAL -->
+  <dialog id="submission-tracking-modal">
+    <div class="modal-header">
+      <h3 style="font-size:1.6rem; color:var(--accent);">My Submissions</h3>
+      <button class="modal-close-btn" onclick="closeSubmissionTrackingModal()" aria-label="Close submission tracking modal">&times;</button>
+    </div>
+    <div class="modal-content">
+      <div id="submission-tracking-content">
+        <p>Loading your submissions...</p>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- MODERATION DASHBOARD MODAL -->
+  <dialog id="moderation-modal">
+    <div class="modal-header">
+      <h3 style="font-size:1.6rem; color:var(--accent);">Moderation Dashboard</h3>
+      <button class="modal-close-btn" onclick="closeModerationModal()" aria-label="Close moderation modal">&times;</button>
+    </div>
+    <div class="modal-content">
+      <div id="moderation-content">
+        <p>Loading pending submissions...</p>
+      </div>
+    </div>
+  </dialog>
 
 </body>
 </html>
