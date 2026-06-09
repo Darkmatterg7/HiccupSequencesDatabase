@@ -2,7 +2,10 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - 2026-06-08
+## [Unreleased] - 2026-06-10
+### Fixed
+- Critical JavaScript syntax error in loadSubmissionTrackingData function that prevented all JavaScript from executing
+- Buttons and QR code lightbox functionality restored by correcting template literal backtick placement
 ### Added
 - iPhone alarm‑clock‑style vertical stepper buttons (▲/▼) for j, x, y, z parameters in the Generator section.
 - Parameter ranges increased to 0–50 for all inputs.
