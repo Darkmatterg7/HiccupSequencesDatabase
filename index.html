@@ -3069,34 +3069,47 @@
       btn.disabled = true;
 
       setTimeout(() => {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
+        try {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
 
-        const validation = validateHiccup(parsedSeq);
-        const prefixMatchResult = matchDatabase(null, null, null, null, parsedSeq, seqDatabase);
+          const validation = validateHiccup(parsedSeq);
+          const prefixMatchResult = matchDatabase(null, null, null, null, parsedSeq, seqDatabase);
 
-        if (!validation.valid) {
-          let extraTips = "";
-          if (validation.diffs && validation.diffs.length > 0) {
-            const uniqueGaps = [...new Set(validation.diffs)].sort((a,b)=>a-b);
-            extraTips = `
-              <div class="tip mt-4">
-                <strong>First Difference Gaps Analysis:</strong><br>
-                Sequence Differences: [${validation.diffs.slice(0, 15).join(', ')}${validation.diffs.length > 15 ? '...' : ''}]<br>
-                Found ${uniqueGaps.length} distinct gaps: [${uniqueGaps.join(', ')}]
-              </div>
-            `;
-          }
+          if (!validation.valid) {
+            let extraTips = "";
+            if (validation.diffs && validation.diffs.length > 0) {
+              const uniqueGaps = [...new Set(validation.diffs)].sort((a,b)=>a-b);
+              extraTips = `
+                <div class="tip mt-4">
+                  <strong>First Difference Gaps Analysis:</strong><br>
+                  Sequence Differences: [${validation.diffs.slice(0, 15).join(', ')}${validation.diffs.length > 15 ? '...' : ''}]<br>
+                  Found ${uniqueGaps.length} distinct gaps: [${uniqueGaps.join(', ')}]
+                </div>
+              `;
+            }
 
-          if (prefixMatchResult) {
+            if (prefixMatchResult) {
+              resultsDiv.innerHTML = `
+                <div class="alert-panel success" style="margin-bottom: 1.5rem; background: rgba(232, 168, 56, 0.06); border-color: rgba(232, 168, 56, 0.28);">
+                  <h4 style="color:var(--accent);">✓ Registered Prefix Connections Found</h4>
+                  <p>The entered prefix does not validate as a standalone hiccup sequence, but it matches registered records by termwise prefix comparison.</p>
+                </div>
+                ${extraTips}
+                <div style="margin-top: 1.5rem;">
+                  ${buildMatchCardHtml(null, null, null, null, parsedSeq, prefixMatchResult)}
+                </div>
+              `;
+              resultsDiv.style.display = 'block';
+              resultsDiv.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+              return;
+            }
+
             resultsDiv.innerHTML = `
-              <div class="alert-panel success" style="margin-bottom: 1.5rem; background: rgba(232, 168, 56, 0.06); border-color: rgba(232, 168, 56, 0.28);">
-                <h4 style="color:var(--accent);">✓ Registered Prefix Connections Found</h4>
-                <p>The entered prefix does not validate as a standalone hiccup sequence, but it matches registered records by termwise prefix comparison.</p>
-              </div>
-              ${extraTips}
-              <div style="margin-top: 1.5rem;">
-                ${buildMatchCardHtml(null, null, null, null, parsedSeq, prefixMatchResult)}
+              <div class="alert-panel danger">
+                <h4>✗ Not a Hiccup Sequence</h4>
+                <p>${validation.reason}</p>
+                ${extraTips}
               </div>
             `;
             resultsDiv.style.display = 'block';
@@ -3104,42 +3117,42 @@
             return;
           }
 
+          // It is a valid sequence!
+          const { j, x, y, z, diffs } = validation;
+
+          // Match against database
+          const matchResult = matchDatabase(j, x, y, z, parsedSeq, seqDatabase);
+
+          let finalHtml = `
+            <div class="alert-panel success" style="margin-bottom: 1.5rem;">
+              <h4>✓ Sequence Authenticated</h4>
+              <p>Passed all mathematical parameters for a <strong>(${j}, ${x}, ${y}, ${z})-hiccup</strong> sequence rule.</p>
+            </div>
+
+            <h4 class="mb-2" style="font-family:var(--font-sans); color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em;">Difference Pattern Rhythm Strip:</h4>
+            ${makeRhythmStripHtml(diffs, y, z)}
+
+            <div style="margin-top: 1.5rem;">
+              ${buildMatchCardHtml(j, x, y, z, parsedSeq, matchResult)}
+            </div>
+          `;
+
+          resultsDiv.innerHTML = finalHtml;
+          resultsDiv.style.display = 'block';
+          resultsDiv.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+        } catch (error) {
+          console.error('Error in runAnalysis:', error);
+          btn.innerHTML = originalText;
+          btn.disabled = false;
           resultsDiv.innerHTML = `
             <div class="alert-panel danger">
-              <h4>✗ Not a Hiccup Sequence</h4>
-              <p>${validation.reason}</p>
-              ${extraTips}
+              <h4>✗ Analysis Error</h4>
+              <p>An error occurred during analysis. Please check the console for details.</p>
             </div>
           `;
           resultsDiv.style.display = 'block';
           resultsDiv.scrollIntoView({ behavior: 'auto', block: 'nearest' });
-          return;
         }
-
-        // It is a valid sequence!
-        const { j, x, y, z, diffs } = validation;
-        
-        // Match against database
-        const matchResult = matchDatabase(j, x, y, z, parsedSeq, seqDatabase);
-
-        let finalHtml = `
-          <div class="alert-panel success" style="margin-bottom: 1.5rem;">
-            <h4>✓ Sequence Authenticated</h4>
-            <p>Passed all mathematical parameters for a <strong>(${j}, ${x}, ${y}, ${z})-hiccup</strong> sequence rule.</p>
-          </div>
-          
-          <h4 class="mb-2" style="font-family:var(--font-sans); color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em;">Difference Pattern Rhythm Strip:</h4>
-          ${makeRhythmStripHtml(diffs, y, z)}
-          
-          <div style="margin-top: 1.5rem;">
-            ${buildMatchCardHtml(j, x, y, z, parsedSeq, matchResult)}
-          </div>
-        `;
-
-        resultsDiv.innerHTML = finalHtml;
-        resultsDiv.style.display = 'block';
-        resultsDiv.scrollIntoView({ behavior: 'auto', block: 'nearest' });
-
       }, 150);
     }
 
@@ -3163,18 +3176,19 @@
       btn.disabled = true;
 
       setTimeout(() => {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
+        try {
+          btn.innerHTML = originalText;
+          btn.disabled = false;
 
-        const { seq, steps } = generateHiccup(j, x, y, z, n);
-        const diffs = [];
-        for (let i = 1; i < seq.length; i++) {
-          diffs.push(seq[i] - seq[i-1]);
-        }
+          const { seq, steps } = generateHiccup(j, x, y, z, n);
+          const diffs = [];
+          for (let i = 1; i < seq.length; i++) {
+            diffs.push(seq[i] - seq[i-1]);
+          }
 
-        // Match against database
-        const matchResult = matchDatabase(j, x, y, z, seq, seqDatabase);
-        
+          // Match against database
+          const matchResult = matchDatabase(j, x, y, z, seq, seqDatabase);
+
         // Cache generated data for the plotter
         currentGeneratedData = { seq, steps, entry: matchResult ? matchResult.entry : null, j, x, y, z };
         const copySeqBtn = document.getElementById('copy-seq-btn');
@@ -3224,11 +3238,11 @@
                 <button class="plot-tab" onclick="exportPlotAsPNG()" style="padding:0.3rem 0.6rem; font-size:0.7rem;">📥 Export PNG</button>
               </div>
             </div>
-            
+
             <div class="plotter-canvas-wrapper">
               <canvas id="sequence-plot" height="350"></canvas>
             </div>
-            
+
             <div class="plotter-stats" id="plotter-stats"></div>
           </div>
 
@@ -3239,7 +3253,7 @@
 
         resultsDiv.innerHTML = finalHtml;
         resultsDiv.style.display = 'block';
-        
+
         // Immediately draw coordinate plot on DOM layout paint
         drawSequenceChart();
         const plotCanvas = document.getElementById('sequence-plot');
@@ -3259,9 +3273,21 @@
             window.addEventListener('resize', plotResizeListener);
           }
         }
-        
-        resultsDiv.scrollIntoView({ behavior: 'auto', block: 'nearest' });
 
+        resultsDiv.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+        } catch (error) {
+          console.error('Error in runGenerator:', error);
+          btn.innerHTML = originalText;
+          btn.disabled = false;
+          resultsDiv.innerHTML = `
+            <div class="alert-panel danger">
+              <h4>✗ Generation Error</h4>
+              <p>An error occurred during sequence generation. Please check the console for details.</p>
+            </div>
+          `;
+          resultsDiv.style.display = 'block';
+          resultsDiv.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+        }
       }, 150);
     }
 
