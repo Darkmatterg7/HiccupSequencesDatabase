@@ -41,6 +41,28 @@
       --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
     }
 
+    [data-theme="light"] {
+      --bg: #f8f6f0;
+      --bg-alt: #f0ecd8;
+      --panel-bg: rgba(240, 236, 216, 0.75);
+      --border-color: rgba(232, 168, 56, 0.15);
+      --border-focus: rgba(232, 168, 56, 0.45);
+      --accent: #b5651d;
+      --accent-hover: #d1893f;
+      --accent-muted: rgba(232, 168, 56, 0.1);
+      --accent-glow: rgba(232, 168, 56, 0.25);
+      --teal: #2c7a73;
+      --teal-muted: rgba(60, 174, 163, 0.1);
+      --teal-glow: rgba(60, 174, 163, 0.25);
+      --text: #3b332b;
+      --text-muted: #6a6655;
+      --danger: #b23e3e;
+      --danger-bg: rgba(239, 68, 68, 0.1);
+      --success: #0b6b3b;
+      --success-bg: rgba(16, 185, 129, 0.1);
+      --success-border: rgba(16, 185, 129, 0.3);
+    }
+
     /* Reset & Base Rules */
     * {
       box-sizing: border-box;
@@ -1024,6 +1046,7 @@
     .collapsible-content.expanded {
       max-height: 1500px;
       opacity: 1;
+      display: block;
     }
 
     .toggle-trigger-btn {
@@ -1693,28 +1716,7 @@
     -moz-appearance: textfield;
   }
 
-:root.light-theme {
-  /* Light theme values */
-  --bg: #f8f6f0;
-  --bg-alt: #f0ecd8;
-  --panel-bg: rgba(240, 236, 216, 0.75);
-  --border-color: rgba(232, 168, 56, 0.15);
-  --border-focus: rgba(232, 168, 56, 0.45);
-  --accent: #b5651d;
-  --accent-hover: #d1893f;
-  --accent-muted: rgba(232, 168, 56, 0.1);
-  --accent-glow: rgba(232, 168, 56, 0.25);
-  --teal: #2c7a73;
-  --teal-muted: rgba(60, 174, 163, 0.1);
-  --teal-glow: rgba(60, 174, 163, 0.25);
-  --text: #3b332b;
-  --text-muted: #6a6655;
-  --danger: #b23e3e;
-  --danger-bg: rgba(239, 68, 68, 0.1);
-  --success: #0b6b3b;
-  --success-bg: rgba(16, 185, 129, 0.1);
-  --success-border: rgba(16, 185, 129, 0.3);
-}
+[data-theme="light"],
 
   </style>
 </head>
@@ -3062,85 +3064,92 @@
         return;
       }
 
-      // Add a tiny visual processing delay (quality feeling)
+      // Update button state immediately for feedback
       const btn = document.getElementById('analyse-btn');
       const originalText = btn.innerHTML;
       btn.innerHTML = `<span class="spinner"></span> Analysing...`;
       btn.disabled = true;
 
-      setTimeout(() => {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
+      // Process results immediately (removed setTimeout for better testability)
+      const validation = validateHiccup(parsedSeq);
+      const prefixMatchResult = matchDatabase(null, null, null, null, parsedSeq, seqDatabase);
 
-        const validation = validateHiccup(parsedSeq);
-        const prefixMatchResult = matchDatabase(null, null, null, null, parsedSeq, seqDatabase);
+      if (!validation.valid) {
+        let extraTips = "";
+        if (validation.diffs && validation.diffs.length > 0) {
+          const uniqueGaps = [...new Set(validation.diffs)].sort((a,b)=>a-b);
+          extraTips = `
+            <div class="tip mt-4">
+              <strong>First Difference Gaps Analysis:</strong><br>
+              Sequence Differences: [${validation.diffs.slice(0, 15).join(', ')}${validation.diffs.length > 15 ? '...' : ''}]<br>
+              Found ${uniqueGaps.length} distinct gaps: [${uniqueGaps.join(', ')}]
+            </div>
+          `;
+        }
 
-        if (!validation.valid) {
-          let extraTips = "";
-          if (validation.diffs && validation.diffs.length > 0) {
-            const uniqueGaps = [...new Set(validation.diffs)].sort((a,b)=>a-b);
-            extraTips = `
-              <div class="tip mt-4">
-                <strong>First Difference Gaps Analysis:</strong><br>
-                Sequence Differences: [${validation.diffs.slice(0, 15).join(', ')}${validation.diffs.length > 15 ? '...' : ''}]<br>
-                Found ${uniqueGaps.length} distinct gaps: [${uniqueGaps.join(', ')}]
-              </div>
-            `;
-          }
-
-          if (prefixMatchResult) {
-            resultsDiv.innerHTML = `
-              <div class="alert-panel success" style="margin-bottom: 1.5rem; background: rgba(232, 168, 56, 0.06); border-color: rgba(232, 168, 56, 0.28);">
-                <h4 style="color:var(--accent);">✓ Registered Prefix Connections Found</h4>
-                <p>The entered prefix does not validate as a standalone hiccup sequence, but it matches registered records by termwise prefix comparison.</p>
-              </div>
-              ${extraTips}
-              <div style="margin-top: 1.5rem;">
-                ${buildMatchCardHtml(null, null, null, null, parsedSeq, prefixMatchResult)}
-              </div>
-            `;
-            resultsDiv.style.display = 'block';
-            resultsDiv.scrollIntoView({ behavior: 'auto', block: 'nearest' });
-            return;
-          }
-
+        if (prefixMatchResult) {
           resultsDiv.innerHTML = `
-            <div class="alert-panel danger">
-              <h4>✗ Not a Hiccup Sequence</h4>
-              <p>${validation.reason}</p>
-              ${extraTips}
+            <div class="alert-panel success" style="margin-bottom: 1.5rem; background: rgba(232, 168, 56, 0.06); border-color: rgba(232, 168, 56, 0.28);">
+              <h4 style="color:var(--accent);">✓ Registered Prefix Connections Found</h4>
+              <p>The entered prefix does not validate as a standalone hiccup sequence, but it matches registered records by termwise prefix comparison.</p>
+            </div>
+            ${extraTips}
+            <div style="margin-top: 1.5rem;">
+              ${buildMatchCardHtml(null, null, null, null, parsedSeq, prefixMatchResult)}
             </div>
           `;
           resultsDiv.style.display = 'block';
           resultsDiv.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+
+          // Reset button state after processing
+          btn.innerHTML = originalText;
+          btn.disabled = false;
           return;
         }
 
-        // It is a valid sequence!
-        const { j, x, y, z, diffs } = validation;
-        
-        // Match against database
-        const matchResult = matchDatabase(j, x, y, z, parsedSeq, seqDatabase);
-
-        let finalHtml = `
-          <div class="alert-panel success" style="margin-bottom: 1.5rem;">
-            <h4>✓ Sequence Authenticated</h4>
-            <p>Passed all mathematical parameters for a <strong>(${j}, ${x}, ${y}, ${z})-hiccup</strong> sequence rule.</p>
-          </div>
-          
-          <h4 class="mb-2" style="font-family:var(--font-sans); color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em;">Difference Pattern Rhythm Strip:</h4>
-          ${makeRhythmStripHtml(diffs, y, z)}
-          
-          <div style="margin-top: 1.5rem;">
-            ${buildMatchCardHtml(j, x, y, z, parsedSeq, matchResult)}
+        resultsDiv.innerHTML = `
+          <div class="alert-panel danger">
+            <h4>✗ Not a Hiccup Sequence</h4>
+            <p>${validation.reason}</p>
+            ${extraTips}
           </div>
         `;
-
-        resultsDiv.innerHTML = finalHtml;
         resultsDiv.style.display = 'block';
         resultsDiv.scrollIntoView({ behavior: 'auto', block: 'nearest' });
 
-      }, 150);
+        // Reset button state after processing
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        return;
+      }
+
+      // It is a valid sequence!
+      const { j, x, y, z, diffs } = validation;
+
+      // Match against database
+      const matchResult = matchDatabase(j, x, y, z, parsedSeq, seqDatabase);
+
+      let finalHtml = `
+        <div class="alert-panel success" style="margin-bottom: 1.5rem;">
+          <h4>✓ Sequence Authenticated</h4>
+          <p>Passed all mathematical parameters for a <strong>(${j}, ${x}, ${y}, ${z})-hiccup</strong> sequence rule.</p>
+        </div>
+
+        <h4 class="mb-2" style="font-family:var(--font-sans); color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em;">Difference Pattern Rhythm Strip:</h4>
+        ${makeRhythmStripHtml(diffs, y, z)}
+
+        <div style="margin-top: 1.5rem;">
+          ${buildMatchCardHtml(j, x, y, z, parsedSeq, matchResult)}
+        </div>
+      `;
+
+      resultsDiv.innerHTML = finalHtml;
+      resultsDiv.style.display = 'block';
+      resultsDiv.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+
+      // Reset button state after processing
+      btn.innerHTML = originalText;
+      btn.disabled = false;
     }
 
     // Section 2 Pipeline
@@ -3161,10 +3170,6 @@
       const originalText = btn.innerHTML;
       btn.innerHTML = `<span class="spinner"></span> Generating...`;
       btn.disabled = true;
-
-      setTimeout(() => {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
 
         const { seq, steps } = generateHiccup(j, x, y, z, n);
         const diffs = [];
@@ -3262,7 +3267,9 @@
         
         resultsDiv.scrollIntoView({ behavior: 'auto', block: 'nearest' });
 
-      }, 150);
+        // Reset button state after processing
+        btn.innerHTML = originalText;
+        btn.disabled = false;
     }
 
     // Auto-populates Section 2 from buttons
@@ -3552,18 +3559,16 @@ function trapFocus(element) {
   if (themeToggleBtn) {
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
     const currentTheme = localStorage.getItem('theme') || (prefersDark.matches ? 'dark' : 'light');
-    if (currentTheme === 'dark') {
-      document.documentElement.classList.add('light-theme');
-      themeToggleBtn.textContent = '🌓 Light Mode';
-    } else {
-      document.documentElement.classList.remove('light-theme');
-      themeToggleBtn.textContent = '🌓 Dark Mode';
-    }
+    // Set initial theme on body element
+    document.body.setAttribute('data-theme', currentTheme);
+    themeToggleBtn.textContent = currentTheme === 'dark' ? '🌓 Light Mode' : '🌓 Dark Mode';
 
     themeToggleBtn.addEventListener('click', () => {
-      const isDark = document.documentElement.classList.toggle('light-theme');
-      localStorage.setItem('theme', isDark ? 'light' : 'dark');
-      themeToggleBtn.textContent = isDark ? '🌓 Light Mode' : '🌓 Dark Mode';
+      const isDark = document.body.getAttribute('data-theme') === 'dark';
+      const newTheme = isDark ? 'light' : 'dark';
+      document.body.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      themeToggleBtn.textContent = newTheme === 'dark' ? '🌓 Light Mode' : '🌓 Dark Mode';
     });
   }
 
