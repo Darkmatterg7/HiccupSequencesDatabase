@@ -16,25 +16,25 @@
 - [x] Identify which features to prioritize for transfer
 
 ### Phase 2: Styling & Aesthetics
-- [ ] Extract CSS variables/design tokens from legacy
-- [ ] Import Google Fonts declarations (EB Garamond, Inter, JetBrains Mono, CMU Typewriter Text)
-- [ ] Apply color scheme: --bg: #0b0e14, --accent: #e8a838, etc.
-- [ ] Import typography settings
-- [ ] Import layout and spacing conventions
-- [ ] Import card, button, input styles
+- [x] Extract CSS variables/design tokens from legacy
+- [x] Import Google Fonts declarations (EB Garamond, Inter, JetBrains Mono, CMU Typewriter Text)
+- [x] Apply color scheme: --bg: #0b0e14, --accent: #e8a838, etc.
+- [x] Import typography settings
+- [x] Import layout and spacing conventions
+- [x] Import card, button, input styles
 
 ### Phase 3: Features & Functionality
-- [ ] Identify interactive components (tabs, modals, forms, etc.)
-- [ ] Extract JavaScript functionality for sequence generation/matching
-- [ ] Extract Chart.js configuration if present
-- [ ] Extract user profile/switcher functionality
-- [ ] Extract submission workflow UI
+- [x] Identify interactive components (tabs, modals, forms, etc.)
+- [x] Extract JavaScript functionality for sequence generation/matching
+- [x] Extract Chart.js configuration if present
+- [x] Extract user profile/switcher functionality
+- [x] Extract submission workflow UI
 - [ ] Extract moderation dashboard UI
 
 ### Phase 4: Implementation & Testing
-- [ ] Apply styling changes to index.html in chunks
-- [ ] Test visual appearance after each chunk
-- [ ] Implement JavaScript features in chunks
+- [x] Apply styling changes to index.html in chunks (added missing stepper-btn, input-with-stepper, input-desc CSS)
+- [x] Test visual appearance after each chunk (verified implementation matches legacy for correct appearance)
+- [x] Implement JavaScript features in chunks (added submission-trigger header button and hidden trigger)
 - [ ] Test functionality after each implementation
 - [ ] Verify responsive design works
 - [ ] Ensure all existing functionality remains intact
