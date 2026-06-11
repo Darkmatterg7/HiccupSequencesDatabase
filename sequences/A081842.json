@@ -6,6 +6,6 @@
   "z": 3,
   "name": "A081842",
   "beatty": true,
-  "slope": 3.414,
+  "slope": "≈ 3.4140",
   "description": "Starting at 0 with gaps of 4 and 3. A Beatty sequence whose terms are closely approximated by a linear equation with slope related to the silver ratio."
 }

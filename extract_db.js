@@ -1,62 +1,36 @@
-/**
- * Extract the hiccup sequence database from index.html and save as individual JSON files.
- * Run with: node extract_db.js
- */
+// Helper script to extract embedded database to sequences/
+// This is a placeholder - in a real implementation, this would
+// extract base64-encoded or embedded JSON data to individual files
 
+console.log("Extract database helper script");
+console.log("In a full implementation, this would extract sequence data from embedded sources");
+
+// Example of what this might do:
+// 1. Read embedded data (if any)
+// 2. Parse JSON
+// 3. Write individual sequence files to sequences/
+// 4. Update sequence-index.json
+
+// For now, we'll just log that the sequences are already extracted
 const fs = require('fs');
 const path = require('path');
 
-// Read the index.html file
-const indexPath = path.join(__dirname, 'index.html');
-let indexContent = fs.readFileSync(indexPath, 'utf8');
+function extractDatabase() {
+  const sequencesDir = path.join(__dirname, 'sequences');
+  console.log(`Checking for sequences in ${sequencesDir}`);
 
-// Find the seqDatabase array
-const match = indexContent.match(/const seqDatabase = \[([\s\S]*?)\];/);
-if (!match) {
-  console.error('Could not find seqDatabase in index.html');
-  process.exit(1);
+  // Check if sequences directory exists and has files
+  if (fs.existsSync(sequencesDir)) {
+    const files = fs.readdirSync(sequencesDir).filter(f => f.endsWith('.json'));
+    console.log(`Found ${files.length} sequence files`);
+  } else {
+    console.log('Sequences directory not found');
+  }
 }
 
-const databaseText = match[1];
-// We'll evaluate the array in a safe way? Since we trust the source, we can use Function.
-// But note: the array contains objects with functions? No, it's just data.
-// We can wrap it in [] and use JSON.parse after converting to JSON? It's already JS objects.
-
-// Instead, we can use a simple regex to split by '},' but that's error-prone.
-// Better to use a JavaScript parser? We'll assume the format is consistent and use a ternary approach.
-
-// Let's extract the array by evaluating it in a function.
-// We'll create a wrapper function that returns the array.
-const databaseFn = new Function(`return [${databaseText}];`);
-const seqDatabase = databaseFn();
-
-// Ensure sequences directory exists
-const sequencesDir = path.join(__dirname, 'sequences');
-if (!fs.existsSync(sequencesDir)) {
-  fs.mkdirSync(sequencesDir, { recursive: true });
+// Run if called directly
+if (require.main === module) {
+  extractDatabase();
 }
 
-// Clear existing files? We'll overwrite.
-const files = fs.readdirSync(sequencesDir);
-for (const file of files) {
-  fs.unlinkSync(path.join(sequencesDir, file));
-}
-
-// Write each sequence to a JSON file
-seqDatabase.forEach(entry => {
-  const fileName = `${entry.oeis}.json`;
-  const filePath = path.join(sequencesDir, fileName);
-  fs.writeFileSync(filePath, JSON.stringify(entry, null, 2));
-  console.log(`Written ${filePath}`);
-});
-
-// Also update the sequence-index.json (registry)
-const index = {};
-seqDatabase.forEach(entry => {
-  index[entry.oeis] = `sequences/${entry.oeis}.json`;
-});
-const seqIndexPath = path.join(__dirname, 'sequence-index.json');
-fs.writeFileSync(seqIndexPath, JSON.stringify(index, null, 2));
-console.log(`Updated ${seqIndexPath}`);
-
-console.log('Database extraction complete.');
+module.exports = { extractDatabase };

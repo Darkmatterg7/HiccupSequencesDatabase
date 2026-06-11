@@ -6,6 +6,6 @@
   "z": 5,
   "name": "A081839",
   "beatty": true,
-  "slope": 4.445,
+  "slope": "≈ 4.4450",
   "description": "Starting at 0, this sequence generates terms using lookback j=0 and gaps 4 and 5. It is a Beatty sequence that maps neatly to a digital straight line of slope roughly 4.45."
 }

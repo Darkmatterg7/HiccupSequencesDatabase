@@ -6,6 +6,6 @@
   "z": 3,
   "name": "A080667",
   "beatty": true,
-  "slope": 3.447,
+  "slope": "≈ 3.4470",
   "description": "A (0,3,4,3)-hiccup sequence with start value 3. Because the gap difference is 1, this forms a Beatty sequence. It exhibits a rhythmic pulse of differences [+4] and [+3] that can be analyzed as a Sturmian word."
 }

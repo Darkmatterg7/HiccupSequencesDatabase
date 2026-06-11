@@ -6,6 +6,6 @@
   "z": 4,
   "name": "A081835",
   "beatty": true,
-  "slope": 4.445,
+  "slope": "≈ 4.4450",
   "description": "A (0,1,5,4)-hiccup sequence. The gaps are 5 and 4. Since |5 - 4| = 1, it forms a Beatty sequence of slope slightly above 4, exhibiting typical non-homogeneous Beatty characteristics."
 }
