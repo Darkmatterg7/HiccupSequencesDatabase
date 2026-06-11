@@ -7,6 +7,6 @@
   "name": "Beatty sequence related to sqrt(2)",
   "beatty": true,
   "formula": "⌊n·√2⌋",
-  "slope": 1.4142135623730951,
+  "slope": "≈ 1.4142",
   "description": "This Beatty sequence is closely related to the square root of 2. It represents the floor of n multiplied by the square root of 2, offset slightly. It displays a highly regular Beatty pattern where differences are either 1 or 2, reflecting the irrationality of √2."
 }

@@ -6,6 +6,6 @@
   "z": 3,
   "name": "A026356 (= A007066 except first term)",
   "beatty": true,
-  "slope": 2.618033988749895,
+  "slope": "≈ 2.6180",
   "description": "This sequence is exactly equal to A007066 except for the very first term, where it starts at 2 instead of 1. It forms a Beatty sequence of slope φ², demonstrating how initial perturbations in the starting term propagate in the lookback dynamics."
 }

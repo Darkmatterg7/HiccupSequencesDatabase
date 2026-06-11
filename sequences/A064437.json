@@ -7,6 +7,6 @@
   "name": "Beatty Sequence A064437",
   "beatty": true,
   "formula": "⌊1 + (√2)(n−1) + 1/(2+√2)⌋",
-  "slope": 2.414213562373095,
+  "slope": "≈ 2.4142",
   "description": "Robert Israel empirically discovered a closed Beatty formula: ⌊1 + (√2)(n−1) + 1/(2+√2)⌋. A non-homogeneous Beatty sequence with slope 1+√2 and a non-trivial offset. A081840 equals this sequence plus one."
 }

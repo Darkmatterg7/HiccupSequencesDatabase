@@ -6,6 +6,6 @@
   "z": 2,
   "name": "A080652 (= A086377 + 1)",
   "beatty": true,
-  "slope": 2.414213562373095,
+  "slope": "≈ 2.4142",
   "description": "This Beatty sequence is exactly equal to the BDS sequence (A086377) offset by a constant +1. It demonstrates how lookbacks with starting index variations map directly to one another by translations."
 }

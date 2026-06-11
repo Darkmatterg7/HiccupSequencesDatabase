@@ -6,6 +6,6 @@
   "z": 3,
   "name": "A080600",
   "beatty": true,
-  "slope": 3.447,
+  "slope": "≈ 3.4470",
   "description": "Starting at 4, this (0,4,4,3)-hiccup sequence uses consecutive differences of 4 and 3. As a result, it constitutes a Beatty sequence. It has a beautiful, highly symmetric lookback grid and exhibits deep structure under modulo operations."
 }

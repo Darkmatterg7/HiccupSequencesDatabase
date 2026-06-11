@@ -6,6 +6,6 @@
   "z": 4,
   "name": "A081843",
   "beatty": true,
-  "slope": 4.414,
+  "slope": "≈ 4.4140",
   "description": "A (0,0,5,4)-hiccup sequence. Since the gaps are 5 and 4, it is a Beatty sequence. It exhibits a beautiful, dense lookback structure."
 }

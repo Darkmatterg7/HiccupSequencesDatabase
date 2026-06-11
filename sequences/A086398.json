@@ -6,7 +6,7 @@
   "z": 2,
   "name": "A086398 (Kimberling's sequence)",
   "beatty": false,
-  "slope": 2.732050807568877,
+  "slope": "≈ 2.7321",
   "bounds": [
     -1,
     4
