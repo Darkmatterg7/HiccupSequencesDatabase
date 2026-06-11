@@ -449,9 +449,15 @@
         <div style="margin-top:0.5rem; font-size:0.8rem; color:var(--text-muted);">
             <span style="margin-right:1rem; cursor:pointer;" id="submission-tracking-header" title="View my submissions" onclick="openSubmissionTrackingModal()">📋 My Submissions</span>
             <span style="margin-right:1rem; cursor:pointer;" id="moderation-header" title="Moderation dashboard" onclick="openModerationModal()">🛡️ Moderation</span>
+            <button id="submission-trigger-header" title="Submit a new sequence" class="btn" style="padding:0.5rem 1rem; font-size:0.9rem; margin-left:0.5rem;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L15.09 8.26L22 9.27L13 14.29L15.13 20.8L12 18L8.87 20.8L11 14.29L2 9.27L8.91 8.26L12 2Z" fill="var(--accent)"/>
+                </svg>
+            </button>
             <!-- Hidden triggers for programmatic access -->
             <button id="submission-tracking-trigger" style="display:none;" onclick="openSubmissionTrackingModal()"></button>
             <button id="moderation-trigger" style="display:none;" onclick="openModerationModal()"></button>
+            <button id="submission-trigger" style="display:none;" onclick="openSubmissionModal()"></button>
         </div>
 
         <!-- Tab Content -->

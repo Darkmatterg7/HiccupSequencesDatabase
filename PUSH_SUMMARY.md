@@ -21,6 +21,7 @@
   * Clear step-by-step navigation with visual indicators
   * Responsive design working on mobile and desktop
   * Integrated with existing CSS variables, fonts, and design tokens
+  * Added submission-trigger header button for quick access to submission workflow
 - **Added missing CSS classes for proper styling:**
   * stepper-btn CSS for parameter adjustment buttons (matching legacy implementation)
   * input-with-stepper CSS for proper layout of inputs with steppers
