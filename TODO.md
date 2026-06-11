@@ -16,19 +16,19 @@
 - [x] Identify which features to prioritize for transfer
 
 ### Phase 2: Styling & Aesthetics
-- [ ] Extract CSS variables/design tokens from legacy
-- [ ] Import Google Fonts declarations (EB Garamond, Inter, JetBrains Mono, CMU Typewriter Text)
-- [ ] Apply color scheme: --bg: #0b0e14, --accent: #e8a838, etc.
-- [ ] Import typography settings
-- [ ] Import layout and spacing conventions
-- [ ] Import card, button, input styles
+- [x] Extract CSS variables/design tokens from legacy
+- [x] Import Google Fonts declarations (EB Garamond, Inter, JetBrains Mono, CMU Typewriter Text)
+- [x] Apply color scheme: --bg: #0b0e14, --accent: #e8a838, etc.
+- [x] Import typography settings
+- [x] Import layout and spacing conventions
+- [x] Import card, button, input styles
 
 ### Phase 3: Features & Functionality
-- [ ] Identify interactive components (tabs, modals, forms, etc.)
-- [ ] Extract JavaScript functionality for sequence generation/matching
-- [ ] Extract Chart.js configuration if present
-- [ ] Extract user profile/switcher functionality
-- [ ] Extract submission workflow UI
+- [x] Identify interactive components (tabs, modals, forms, etc.)
+- [x] Extract JavaScript functionality for sequence generation/matching
+- [x] Extract Chart.js configuration if present
+- [x] Extract user profile/switcher functionality
+- [x] Extract submission workflow UI
 - [ ] Extract moderation dashboard UI
 
 ### Phase 4: Implementation & Testing

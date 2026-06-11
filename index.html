@@ -389,6 +389,15 @@
             <button class="tab" data-tab="moderate">Moderation</button>
         </div>
 
+        <!-- Header buttons for submission tracking and moderation -->
+        <div style="margin-top:0.5rem; font-size:0.8rem; color:var(--text-muted);">
+            <span style="margin-right:1rem; cursor:pointer;" id="submission-tracking-header" title="View my submissions" onclick="openSubmissionTrackingModal()">📋 My Submissions</span>
+            <span style="margin-right:1rem; cursor:pointer;" id="moderation-header" title="Moderation dashboard" onclick="openModerationModal()">🛡️ Moderation</span>
+            <!-- Hidden triggers for programmatic access -->
+            <button id="submission-tracking-trigger" style="display:none;" onclick="openSubmissionTrackingModal()"></button>
+            <button id="moderation-trigger" style="display:none;" onclick="openModerationModal()"></button>
+        </div>
+
         <!-- Tab Content -->
         <div id="generate-tab" class="tab-content active">
             <h2>Generate a Hiccup Sequence</h2>
@@ -484,6 +493,7 @@
                 <div class="user-options">
                     <div class="user-option active" data-role="submit-regular">Regular User</div>
                     <div class="user-option" data-role="submit-reviewer">Reviewer</div>
+                    <div class="user-option" data-role="submit-admin">Administrator</div>
                 </div>
             </div>
 
@@ -491,60 +501,100 @@
                 <div class="form-step active" id="step-parameters">
                     <h3>Step 1: Parameters</h3>
                     <div class="input-group">
-                        <label for="submit-j">Lookback offset (j):</label>
-                        <input type="number" id="submit-j" min="0" value="0">
+                        <label for="submit-j">Lookback Offset (j)</label>
+                        <div class="input-with-stepper">
+                            <input type="number" id="submit-j" value="0" min="0" max="50" class="input-field">
+                            <button type="button" class="stepper-btn up" onclick="adjustParam('submit-j', 1)" aria-label="Increase j">▲</button>
+                            <button type="button" class="stepper-btn down" onclick="adjustParam('submit-j', -1)" aria-label="Decrease j">▼</button>
+                        </div>
                     </div>
+
                     <div class="input-group">
-                        <label for="submit-x">Starting value (x):</label>
-                        <input type="number" id="submit-x" min="0" value="1">
+                        <label for="submit-x">Starting Value (x)</label>
+                        <div class="input-with-stepper">
+                            <input type="number" id="submit-x" value="1" min="0" max="1000" class="input-field">
+                            <button type="button" class="stepper-btn up" onclick="adjustParam('submit-x', 1)" aria-label="Increase x">▲</button>
+                            <button type="button" class="stepper-btn down" onclick="adjustParam('submit-x', -1)" aria-label="Decrease x">▼</button>
+                        </div>
                     </div>
+
                     <div class="input-group">
-                        <label for="submit-y">Gap when matched (y):</label>
-                        <input type="number" id="submit-y" min="1" value="1">
+                        <label for="submit-y">Gap When In Sequence (y)</label>
+                        <div class="input-with-stepper">
+                            <input type="number" id="submit-y" value="2" min="1" max="50" class="input-field">
+                            <button type="button" class="stepper-btn up" onclick="adjustParam('submit-y', 1)" aria-label="Increase y">▲</button>
+                            <button type="button" class="stepper-btn down" onclick="adjustParam('submit-y', -1)" aria-label="Decrease y">▼</button>
+                        </div>
                     </div>
+
                     <div class="input-group">
-                        <label for="submit-z">Gap when not matched (z):</label>
-                        <input type="number" id="submit-z" min="1" value="2">
+                        <label for="submit-z">Gap When Not In Sequence (z)</label>
+                        <div class="input-with-stepper">
+                            <input type="number" id="submit-z" value="3" min="1" max="50" class="input-field">
+                            <button type="button" class="stepper-btn up" onclick="adjustParam('submit-z', 1)" aria-label="Increase z">▲</button>
+                            <button type="button" class="stepper-btn down" onclick="adjustParam('submit-z', -1)" aria-label="Decrease z">▼</button>
+                        </div>
                     </div>
+
+                    <p class="input-desc" id="submit-param-warning" style="color:var(--danger); margin-top:0.5rem;"></p>
+                    <p class="input-desc" id="submit-param-info" style="margin-top:0.5rem; font-size:0.9rem;"></p>
+
                     <div class="input-group">
                         <label for="submit-preview">Preview first 20 terms:</label>
                         <div class="sequence-terms" id="submit-preview"></div>
+                    </div>
+
+                    <div style="margin-top:1.5rem; display:flex; justify-content:space-between; align-items:center;">
+                        <button id="submit-step1-next" class="btn" style="margin-right:0.5rem;">Next →</button>
                     </div>
                 </div>
 
                 <div class="form-step" id="step-metadata">
                     <h3>Step 2: Metadata</h3>
                     <div class="input-group">
-                        <label for="submit-title">Title:</label>
-                        <input type="text" id="submit-title" placeholder="e.g., My Novel Hiccup Sequence">
+                        <label for="submit-title">Title *</label>
+                        <input type="text" id="submit-title" placeholder="e.g., My Novel Hiccup Sequence" required>
                     </div>
                     <div class="input-group">
-                        <label for="submit-description">Description:</label>
-                        <textarea id="submit-description" rows="3" placeholder="Describe your sequence..."></textarea>
+                        <label for="submit-description">Description *</label>
+                        <textarea id="submit-description" rows="4" placeholder="Describe the sequence, its properties, and any interesting observations" required></textarea>
                     </div>
                     <div class="input-group">
-                        <label for="submit-references">References (one per line):</label>
-                        <textarea id="submit-references" rows="2" placeholder="e.g., Journal article, book, etc."></textarea>
+                        <label for="submit-references">References (optional)</label>
+                        <input type="text" id="submit-references" placeholder="OEIS IDs, URLs, or citations (comma-separated)">
                     </div>
                     <div class="input-group">
-                        <label for="submit-notes">Notes:</label>
-                        <textarea id="submit-notes" rows="2" placeholder="Any additional notes..."></textarea>
+                        <label for="submit-notes">Notes (optional)</label>
+                        <textarea id="submit-notes" rows="3" placeholder="Any additional notes or comments"></textarea>
+                    </div>
+
+                    <div style="margin-top:1.5rem; display:flex; justify-content:space-between; align-items:center;">
+                        <button id="submit-step2-prev" class="btn btn-secondary" style="margin-right:0.5rem;">← Previous</button>
+                        <button id="submit-step2-next" class="btn" style="margin-left:0.5rem;">Next →</button>
                     </div>
                 </div>
 
                 <div class="form-step" id="step-connections">
                     <h3>Step 3: Mathematical Connections</h3>
                     <div class="input-group">
-                        <label for="submit-formulas">Formulas:</label>
-                        <textarea id="submit-formulas" rows="2" placeholder="e.g., a(n) = floor(n*phi)"></textarea>
+                        <label for="submit-formula">Closed-form Formula (optional)</label>
+                        <input type="text" id="submit-formula" placeholder="e.g., ⌊n·√2⌋ or ⌊n·φ + 1⌋">
                     </div>
                     <div class="input-group">
-                        <label for="submit-morphisms">Morphisms/Transformations:</label>
-                        <textarea id="submit-morphisms" rows="2" placeholder="e.g., related to Wythoff pairs"></textarea>
+                        <label for="submit-beatty">Beatty Sequence?</label>
+                        <select id="submit-beatty">
+                            <option value="unknown">Unknown</option>
+                            <option value="yes">Yes</option>
+                            <option value="no">No</option>
+                        </select>
                     </div>
                     <div class="input-group">
-                        <label for="submit-beatty">Beatty/Sturmian Attributes:</label>
-                        <textarea id="submit-beatty" rows="2" placeholder="e.g., complementary Beatty pair"></textarea>
+                        <label for="submit-slope">Slope (if Beatty)</label>
+                        <input type="number" id="submit-slope" placeholder="Enter slope value" step="0.000001">
+                    </div>
+                    <div class="input-group">
+                        <label for="submit-morphism">Morphism (optional)</label>
+                        <input type="text" id="submit-morphism" placeholder="e.g., 0→010, 1→10">
                     </div>
                 </div>
 
@@ -553,6 +603,11 @@
                     <div id="submit-preview-container">
                         <h4>Preview:</h4>
                         <div id="submit-final-preview"></div>
+                    </div>
+
+                    <div style="margin-top:1.5rem; display:flex; justify-content:space-between; align-items:center;">
+                        <button id="submit-step3-prev" class="btn btn-secondary" style="margin-right:0.5rem;">← Previous</button>
+                        <button id="submit-step4-submit" class="btn" style="margin-left:0.5rem;">Submit Sequence</button>
                     </div>
                 </div>
 
@@ -586,9 +641,837 @@
 
     <!-- Include Chart.js for charts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/chart.js/3.9.1/chart.min.js"></script>
+
+    <!-- Submission Workflow Modal -->
+    <dialog id="submission-modal">
+        <div class="modal-header">
+            <h3 style="font-size:1.6rem; color:var(--accent);">Submit New Hiccup Sequence</h3>
+            <button class="modal-close-btn" onclick="closeSubmissionModal()" aria-label="Close submission modal">&times;</button>
+        </div>
+        <div class="modal-content">
+            <!-- Submission Wizard Steps -->
+            <div id="submission-wizard">
+                <!-- Step 1: User Profile -->
+                <div id="submission-step-1" class="submission-step">
+                    <h4 style="color:var(--accent); margin-bottom:1rem;">User Profile</h4>
+                    <div class="form-group">
+                        <label for="user-profile-select" class="input-label">Select your role:</label>
+                        <select id="user-profile-select" class="input-field">
+                            <option value="regular">Regular User</option>
+                            <option value="reviewer">Reviewer</option>
+                            <option value="admin">Administrator</option>
+                        </select>
+                    </div>
+                    <p class="input-desc">Choose your role to determine what actions you can perform in the submission workflow.</p>
+                    <div style="margin-top:1.5rem; text-align:right;">
+                        <button id="step1-next" class="btn" style="margin-right:0.5rem;">Next →</button>
+                    </div>
+                </div>
+
+                <!-- Step 2: Parameters -->
+                <div id="submission-step-2" class="submission-step" style="display:none;">
+                    <h4 style="color:var(--accent); margin-bottom:1rem;">Sequence Parameters</h4>
+                    <div class="form-group">
+                        <label for="sub-param-j" class="input-label">Lookback Offset (j)</label>
+                        <div class="input-with-stepper">
+                            <input type="number" id="sub-param-j" value="0" min="0" max="50" class="input-field">
+                            <button type="button" class="stepper-btn up" onclick="adjustParam('sub-param-j', 1)" aria-label="Increase j">▲</button>
+                            <button type="button" class="stepper-btn down" onclick="adjustParam('sub-param-j', -1)" aria-label="Decrease j">▼</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sub-param-x" class="input-label">Starting Value (x)</label>
+                        <div class="input-with-stepper">
+                            <input type="number" id="sub-param-x" value="1" min="0" max="1000" class="input-field">
+                            <button type="button" class="stepper-btn up" onclick="adjustParam('sub-param-x', 1)" aria-label="Increase x">▲</button>
+                            <button type="button" class="stepper-btn down" onclick="adjustParam('sub-param-x', -1)" aria-label="Decrease x">▼</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sub-param-y" class="input-label">Gap When In Sequence (y)</label>
+                        <div class="input-with-stepper">
+                            <input type="number" id="sub-param-y" value="2" min="1" max="50" class="input-field">
+                            <button type="button" class="stepper-btn up" onclick="adjustParam('sub-param-y', 1)" aria-label="Increase y">▲</button>
+                            <button type="button" class="stepper-btn down" onclick="adjustParam('sub-param-y', -1)" aria-label="Decrease y">▼</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sub-param-z" class="input-label">Gap When Not In Sequence (z)</label>
+                        <div class="input-with-stepper">
+                            <input type="number" id="sub-param-z" value="3" min="1" max="50" class="input-field">
+                            <button type="button" class="stepper-btn up" onclick="adjustParam('sub-param-z', 1)" aria-label="Increase z">▲</button>
+                            <button type="button" class="stepper-btn down" onclick="adjustParam('sub-param-z', -1)" aria-label="Decrease z">▼</button>
+                        </div>
+                    </div>
+
+                    <p class="input-desc" id="sub-param-warning" style="color:var(--danger); margin-top:0.5rem;"></p>
+                    <p class="input-desc" id="sub-param-info" style="margin-top:0.5rem; font-size:0.9rem;"></p>
+
+                    <div style="margin-top:1.5rem; display:flex; justify-content:space-between; align-items:center;">
+                        <button id="step2-prev" class="btn btn-secondary">← Previous</button>
+                        <button id="step2-next" class="btn" style="margin-left:0.5rem;">Next →</button>
+                    </div>
+                </div>
+
+                <!-- Step 3: Metadata -->
+                <div id="submission-step-3" class="submission-step" style="display:none;">
+                    <h4 style="color:var(--accent); margin-bottom:1rem;">Sequence Metadata</h4>
+                    <div class="form-group">
+                        <label for="sub-title" class="input-label">Title *</label>
+                        <input type="text" id="sub-title" placeholder="Enter a descriptive title for your sequence" class="input-field">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sub-description" class="input-label">Description *</label>
+                        <textarea id="sub-description" rows="4" placeholder="Describe the sequence, its properties, and any interesting observations" class="input-field"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sub-references" class="input-label">References (optional)</label>
+                        <input type="text" id="sub-references" placeholder="OEIS IDs, URLs, or citations (comma-separated)" class="input-field">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sub-notes" class="input-label">Notes (optional)</label>
+                        <textarea id="sub-notes" rows="3" placeholder="Any additional notes or comments" class="input-field"></textarea>
+                    </div>
+
+                    <div style="margin-top:1.5rem; display:flex; justify-content:space-between; align-items:center;">
+                        <button id="step3-prev" class="btn btn-secondary">← Previous</button>
+                        <button id="step3-next" class="btn" style="margin-left:0.5rem;">Next →</button>
+                    </div>
+                </div>
+
+                <!-- Step 4: Mathematical Connections -->
+                <div id="submission-step-4" class="submission-step" style="display:none;">
+                    <h4 style="color:var(--accent); margin-bottom:1rem;">Mathematical Connections</h4>
+                    <div class="form-group">
+                        <label for="sub-formula" class="input-label">Closed-form Formula (optional)</label>
+                        <input type="text" id="sub-formula" placeholder="e.g., ⌊n·√2⌋ or ⌊n·φ + 1⌋" class="input-field">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sub-beatty" class="input-label">Beatty Sequence?</label>
+                        <select id="sub-beatty" class="input-field">
+                            <option value="unknown">Unknown</option>
+                            <option value="yes">Yes</option>
+                            <option value="no">No</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sub-slope" class="input-label">Slope (if Beatty)</label>
+                        <input type="number" id="sub-slope" placeholder="Enter slope value" class="input-field" step="0.000001">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="sub-morphism" class="input-label">Morphism (optional)</label>
+                        <input type="text" id="sub-morphism" placeholder="e.g., 0→010, 1→10" class="input-field">
+                    </div>
+
+                    <div style="margin-top:1.5rem; display:flex; justify-content:space-between; align-items:center;">
+                        <button id="step4-prev" class="btn btn-secondary">← Previous</button>
+                        <button id="step4-submit" class="btn" style="margin-left:0.5rem;">Submit Sequence</button>
+                    </div>
+
+                    <div id="submission-validation-status" style="margin-top:1rem; padding:0.75rem; border-radius:4px; font-size:0.9rem;"></div>
+                </div>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Submission Tracking Modal -->
+    <dialog id="submission-tracking-modal">
+        <div class="modal-header">
+            <h3 style="font-size:1.6rem; color:var(--accent);">My Submissions</h3>
+            <button class="modal-close-btn" onclick="closeSubmissionTrackingModal()" aria-label="Close submission tracking modal">&times;</button>
+        </div>
+        <div class="modal-content">
+            <div id="submission-tracking-content">
+                <p>Loading your submissions...</p>
+            </div>
+        </div>
+    </dialog>
+
+    <!-- Moderation Dashboard Modal -->
+    <dialog id="moderation-modal">
+        <div class="modal-header">
+            <h3 style="font-size:1.6rem; color:var(--accent);">Moderation Dashboard</h3>
+            <button class="modal-close-btn" onclick="closeModerationModal()" aria-label="Close moderation modal">&times;</button>
+        </div>
+        <div class="modal-content">
+            <div id="moderation-content">
+                <p>Loading pending submissions...</p>
+            </div>
+        </div>
+    </dialog>
+
     <script>
         // JavaScript will be added incrementally
         console.log("Hiccup Sequence Explorer loaded");
+
+        // Submission workflow functions
+        function openSubmissionModal() {
+            document.getElementById('submission-modal').showModal();
+            showSubmissionStep(1);
+            updateSubmissionParamInfo();
+            updateSubmissionParamWarning();
+        }
+
+        function closeSubmissionModal() {
+            document.getElementById('submission-modal').close();
+        }
+
+        function openSubmissionTrackingModal() {
+            document.getElementById('submission-tracking-modal').showModal();
+            loadSubmissionTrackingData();
+        }
+
+        function closeSubmissionTrackingModal() {
+            document.getElementById('submission-tracking-modal').close();
+        }
+
+        function openModerationModal() {
+            document.getElementById('moderation-modal').showModal();
+            loadModerationData();
+        }
+
+        function closeModerationModal() {
+            document.getElementById('moderation-modal').close();
+        }
+
+        // Submission workflow navigation
+        function showSubmissionStep(stepNum) {
+            const steps = document.querySelectorAll('.submission-step');
+            steps.forEach(step => step.style.display = 'none');
+
+            const step = document.getElementById(`submission-step-${stepNum}`);
+            if (step) step.style.display = 'block';
+
+            if (stepNum === 2) {
+                updateSubmissionParamInfo();
+                updateSubmissionParamWarning();
+            }
+        }
+
+        function updateSubmissionParamInfo() {
+            const j = parseInt(document.getElementById('sub-param-j').value) || 0;
+            const x = parseInt(document.getElementById('sub-param-x').value) || 0;
+            const y = parseInt(document.getElementById('sub-param-y').value) || 0;
+            const z = parseInt(document.getElementById('sub-param-z').value) || 0;
+
+            const infoElement = document.getElementById('sub-param-info');
+            if (infoElement) {
+                if (y === z) {
+                    infoElement.textContent = `⚠️ y and z must be different values`;
+                    infoElement.style.color = 'var(--danger)';
+                } else {
+                    infoElement.textContent = `Sequence will start at ${x} and use gaps of +${y} (when in sequence) and +${z} (when not in sequence)`;
+                    infoElement.style.color = 'var(--text-muted)';
+                }
+            }
+        }
+
+        function updateSubmissionParamWarning() {
+            const j = parseInt(document.getElementById('sub-param-j').value) || 0;
+            const x = parseInt(document.getElementById('sub-param-x').value) || 0;
+            const y = parseInt(document.getElementById('sub-param-y').value) || 0;
+            const z = parseInt(document.getElementById('sub-param-z').value) || 0;
+
+            const warningElement = document.getElementById('sub-param-warning');
+            if (warningElement) {
+                if (y === z) {
+                    warningElement.textContent = `⚠️ Error: y and z parameters must be different`;
+                } else if (j < 0 || x < 0 || y < 1 || z < 1) {
+                    warningElement.textContent = `⚠️ Error: j,x must be ≥0 and y,z must be ≥1`;
+                } else {
+                    warningElement.textContent = '';
+                }
+            }
+        }
+
+        function handleSubmissionSubmit() {
+            // Validate parameters
+            const j = parseInt(document.getElementById('sub-param-j').value) || 0;
+            const x = parseInt(document.getElementById('sub-param-x').value) || 0;
+            const y = parseInt(document.getElementById('sub-param-y').value) || 0;
+            const z = parseInt(document.getElementById('sub-param-z').value) || 0;
+
+            if (y === z) {
+                showSubmissionValidationError('y and z parameters must be different');
+                return;
+            }
+
+            if (j < 0 || x < 0 || y < 1 || z < 1) {
+                showSubmissionValidationError('j,x must be ≥0 and y,z must be ≥1');
+                return;
+            }
+
+            // Validate metadata
+            const title = document.getElementById('sub-title').value.trim();
+            const description = document.getElementById('sub-description').value.trim();
+
+            if (!title) {
+                showSubmissionValidationError('Title is required');
+                return;
+            }
+
+            if (!description) {
+                showSubmissionValidationError('Description is required');
+                return;
+            }
+
+            // Additional validation: check for duplicate sequences
+            const seq = generateHiccup(j, x, y, z, 20).seq;
+            const isDuplicate = checkForDuplicateSequence(seq);
+
+            if (isDuplicate) {
+                showSubmissionValidationError('This sequence already exists in the database or is equivalent to an existing sequence');
+                return;
+            }
+
+            // All validations passed - save submission
+            showSubmissionValidationSuccess('All validations passed! Saving submission...');
+
+            // Generate sequence terms for storage and display
+            const seqResult = generateHiccup(j, x, y, z, 20);
+            const sequenceTerms = seqResult.seq;
+
+            // Create submission object
+            const submission = {
+                id: Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+                timestamp: new Date().toISOString(),
+                userProfile: document.getElementById('user-profile-select').value,
+                parameters: { j, x, y, z },
+                metadata: {
+                    title: document.getElementById('sub-title').value.trim(),
+                    description: document.getElementById('sub-description').value.trim(),
+                    references: document.getElementById('sub-references').value.trim(),
+                    notes: document.getElementById('sub-notes').value.trim()
+                },
+                mathematicalConnections: {
+                    formula: document.getElementById('sub-formula').value.trim(),
+                    beatty: document.getElementById('sub-beatty').value,
+                    slope: document.getElementById('sub-slope').value.trim(),
+                    morphism: document.getElementById(sub-morphism').value.trim()
+                },
+                status: 'pending_review',
+                sequenceTerms: sequenceTerms,
+                isDuplicate: false
+            };
+
+            // Save to localStorage
+            addSubmissionToStorage(submission);
+
+            // Show success and close modal
+            setTimeout(() => {
+                showSubmissionValidationSuccess('Sequence submitted successfully! It will appear in "My Submissions" pending review.');
+                setTimeout(() => {
+                    closeSubmissionModal();
+                    showToast('Sequence submitted successfully!', 'success');
+                    if (submissionTrackingModal && submissionTrackingModal.open) {
+                        loadSubmissionTrackingData();
+                    }
+                    if (moderationModal && moderationModal.open) {
+                        loadModerationData();
+                    }
+                }, 1500);
+            }, 1000);
+        }
+
+        function showSubmissionValidationError(message) {
+            const statusElement = document.getElementById('submission-validation-status');
+            if (statusElement) {
+                statusElement.textContent = message;
+                statusElement.style.backgroundColor = 'var(--danger-bg)';
+                statusElement.style.color = 'var(--danger)';
+                statusElement.style.borderLeft = '4px solid var(--danger)';
+            }
+        }
+
+        function showSubmissionValidationSuccess(message) {
+            const statusElement = document.getElementById('submission-validation-status');
+            if (statusElement) {
+                statusElement.textContent = message;
+                statusElement.style.backgroundColor = 'var(--success-bg)';
+                statusElement.style.color = 'var(--success)';
+                statusElement.style.borderLeft = '4px solid var(--success)';
+            }
+        }
+
+        function checkForDuplicateSequence(seq) {
+            // Check against known database sequences for exact matches
+            for (const entry of seqDatabase) {
+                const dbSeq = generateHiccup(entry.j, entry.x, entry.y, entry.z, seq.length).seq;
+                if (JSON.stringify(seq) === JSON.stringify(dbSeq)) {
+                    return true;
+                }
+
+                // Check for translation equivalence
+                if (seq.length >= 5) {
+                    const offset = seq[0] - dbSeq[0];
+                    if (offset !== 0 && dbSeq.every((v, i) => v + offset === seq[i])) {
+                        return true;
+                    }
+
+                    // Check for scale equivalence
+                    const scaleAnchorIndex = dbSeq.findIndex(v => v !== 0);
+                    if (scaleAnchorIndex >= 0) {
+                        const k = seq[scaleAnchorIndex] / dbSeq[scaleAnchorIndex];
+                        if (!isNaN(k) && Number.isInteger(k) && k > 1) {
+                            if (dbSeq.every((v, i) => v * k === seq[i])) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        function loadSubmissionTrackingData() {
+            const content = document.getElementById('submission-tracking-content');
+            if (!content) return;
+
+            const submissions = getSubmissionsFromStorage();
+
+            if (submissions.length === 0) {
+                content.innerHTML = `
+                    <p>No submissions yet. Use the submit button above to submit your first sequence!</p>
+                `;
+                return;
+            }
+
+            const sortedSubmissions = [...submissions].sort((a, b) =>
+                new Date(b.timestamp) - new Date(a.timestamp)
+            );
+
+            content.innerHTML = `
+                <div class="submissions-list">
+                    ${sortedSubmissions.map(sub => `
+                        <div class="submission-item">
+                            <div class="submission-header">
+                                <h4>${sub.metadata.title || 'Untitled Sequence'}</h4>
+                                <span class="status-badge status-${sub.status}">${sub.status.replace('_', ' ').toUpperCase()}</span>
+                            </div>
+                            <div class="submission-meta">
+                                <p><strong>Parameters:</strong> j=${sub.parameters.j}, x=${sub.parameters.x}, y=${sub.parameters.y}, z=${sub.parameters.z}</p>
+                                <p><strong>Submitted:</strong> ${new Date(sub.timestamp).toLocaleString()}</p>
+                                <p><strong>Role:</strong> ${sub.userProfile}</p>
+                                ${sub.reviewerNotes ? `<p><strong>Reviewer Notes:</strong> ${sub.reviewerNotes}</p>` : ''}
+                            </div>
+                            <div class="submission-terms">
+                                <strong>First 20 terms:</strong> ${sub.sequenceTerms.join(', ')}
+                            </div>
+                            ${sub.status === 'pending_review' && (document.getElementById('user-profile-select')?.value === 'reviewer' || document.getElementById('user-profile-select')?.value === 'admin') ? `
+                            <div class="submission-actions">
+                                <button onclick="approveSubmission('${sub.id}')" class="btn btn-success">Approve</button>
+                                <button onclick="requestChangesSubmission('${sub.id}')" class="btn btn-warning">Request Changes</button>
+                                <button onclick="rejectSubmission('${sub.id}')" class="btn btn-danger">Reject</button>
+                            </div>
+                        ` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function loadModerationData() {
+            const content = document.getElementById('moderation-content');
+            if (!content) return;
+
+            const submissions = getSubmissionsFromStorage();
+            const pendingSubmissions = submissions.filter(sub => sub.status === 'pending_review');
+
+            if (pendingSubmissions.length === 0) {
+                content.innerHTML = `
+                    <p>No pending submissions for review.</p>
+                `;
+                return;
+            }
+
+            const sortedSubmissions = [...pendingSubmissions].sort((a, b) =>
+                new Date(b.timestamp) - new Date(a.timestamp)
+            );
+
+            content.innerHTML = `
+                <div class="moderation-list">
+                    <p><strong>${sortedSubmissions.length}</strong> submission(s) awaiting review</p>
+                    ${sortedSubmissions.map(sub => `
+                        <div class="moderation-item">
+                            <div class="moderation-header">
+                                <h4>${sub.metadata.title || 'Untitled Sequence'}</h4>
+                                <span class="submission-info">Submitted by ${sub.userProfile} on ${new Date(sub.timestamp).toLocaleString()}</span>
+                            </div>
+                            <div class="moderation-meta">
+                                <p><strong>Parameters:</strong> j=${sub.parameters.j}, x=${sub.parameters.x}, y=${sub.parameters.y}, z=${sub.parameters.z}</p>
+                                <p><strong>Description:</strong> ${sub.metadata.description}</p>
+                            </div>
+                            <div class="moderation-terms">
+                                <strong>First 10 terms:</strong> ${sub.sequenceTerms.slice(0, 10).join(', ')}...
+                            </div>
+                            <div class="moderation-actions">
+                                <textarea id="reviewer-notes-${sub.id}" placeholder="Optional feedback for the submitter..." rows="2" class="input-field"></textarea>
+                                <button onclick="approveSubmission('${sub.id}')" class="btn btn-success">Approve</button>
+                                <button onclick="requestChangesSubmission('${sub.id}')" class="btn btn-warning">Request Changes</button>
+                                <button onclick="rejectSubmission('${sub.id}')" class="btn btn-danger">Reject</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function approveSubmission(id) {
+            const submissions = getSubmissionsFromStorage();
+            const index = submissions.findIndex(sub => sub.id === id);
+            if (index !== -1) {
+                submissions[index].status = 'approved';
+                submissions[index].reviewedAt = new Date().toISOString();
+                saveSubmissionsToStorage(submissions);
+                loadSubmissionTrackingData();
+                loadModerationData();
+                showToast('Sequence approved!', 'success');
+            }
+        }
+
+        function requestChangesSubmission(id) {
+            const notes = prompt('Please provide feedback for the submitter:');
+            if (notes !== null) {
+                const submissions = getSubmissionsFromStorage();
+                const index = submissions.findIndex(sub => sub.id === id);
+                if (index !== -1) {
+                    submissions[index].status = 'changes_requested';
+                    submissions[index].reviewerNotes = notes;
+                    submissions[index].reviewedAt = new Date().toISOString();
+                    saveSubmissionsToStorage(submissions);
+                    loadSubmissionTrackingData();
+                    loadModerationData();
+                    showToast('Feedback sent!', 'info');
+                }
+            }
+        }
+
+        function rejectSubmission(id) {
+            const notes = prompt('Please provide reason for rejection:');
+            if (notes !== null) {
+                const submissions = getSubmissionsFromStorage();
+                const index = submissions.findIndex(sub => sub.id === id);
+                if (index !== -1) {
+                    submissions[index].status = 'rejected';
+                    submissions[index].reviewerNotes = notes;
+                    submissions[index].reviewedAt = new Date().toISOString();
+                    saveSubmissionsToStorage(submissions);
+                    loadSubmissionTrackingData();
+                    loadModerationData();
+                    showToast('Sequence rejected!', 'danger');
+                }
+            }
+        }
+
+        function getSubmissionsFromStorage() {
+            const submissions = localStorage.getItem('hiccup_submissions');
+            return submissions ? JSON.parse(submissions) : [];
+        }
+
+        function saveSubmissionsToStorage(submissions) {
+            localStorage.setItem('hiccup_submissions', JSON.stringify(submissions));
+        }
+
+        function addSubmissionToStorage(submission) {
+            const submissions = getSubmissionsFromStorage();
+            submissions.push(submission);
+            saveSubmissionsToStorage(submissions);
+        }
+
+        function updateSubmissionInStorage(updatedSubmission) {
+            const submissions = getSubmissionsFromStorage();
+            const index = submissions.findIndex(sub => sub.id === updatedSubmission.id);
+            if (index !== -1) {
+                submissions[index] = updatedSubmission;
+                saveSubmissionsToStorage(submissions);
+            }
+        }
+
+        // Utility functions from legacy
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+
+            const toastContainer = document.getElementById('toast-container') || document.body;
+            if (!document.getElementById('toast-container')) {
+                const container = document.createElement('div');
+                container.id = 'toast-container';
+                document.body.appendChild(container);
+                toastContainer.appendChild(toast);
+            } else {
+                toastContainer.appendChild(toast);
+            }
+
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function copyToClipboard(text) {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showToast('Copied to clipboard!', 'success');
+                }).catch(() => {
+                    fallbackCopy(text);
+                });
+            } else {
+                fallbackCopy(text);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                const successful = document.execCommand('copy');
+                showToast(successful ? 'Copied to clipboard!' : 'Failed to copy', successful ? 'success' : 'error');
+            } catch (err) {
+                showToast('Failed to copy', 'error');
+            }
+            document.body.removeChild(textarea);
+        }
+
+        // Initialize modals
+        document.addEventListener('DOMContentLoaded', () => {
+            const helpModal = document.getElementById('help-modal');
+            if (helpModal) {
+                helpModal.addEventListener('click', (event) => {
+                    if (event.target === helpModal) {
+                        helpModal.close();
+                    }
+                });
+            }
+
+            const tableBtn = document.getElementById('table-toggle-btn');
+            if (tableBtn) {
+                tableBtn.setAttribute('aria-expanded', 'false');
+            }
+
+            renderReferenceTable(seqDatabase);
+        });
+    </script>
+
+    <!-- Submission Workflow Event Listeners -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get form elements
+            const paramStep = document.getElementById('step-parameters');
+            const metadataStep = document.getElementById('step-metadata');
+            const connectionsStep = document.getElementById('step-connections');
+            const reviewStep = document.getElementById('step-review');
+
+            const prevStepBtn = document.getElementById('prev-step');
+            const nextStepBtn = document.getElementById('next-step');
+            const submitFinalBtn = document.getElementById('submit-final-btn');
+
+            const step1NextBtn = document.getElementById('submit-step1-next');
+            const step2PrevBtn = document.getElementById('submit-step2-prev');
+            const step2NextBtn = document.getElementById('submit-step2-next');
+            const step3PrevBtn = document.getElementById('submit-step3-prev');
+            const step3NextBtn = document.getElementById('submit-step3-next');
+            const step4PrevBtn = document.getElementById('submit-step4-prev');
+            const step4SubmitBtn = document.getElementById('submit-step4-submit');
+
+            let currentStep = 1;
+
+            // Function to show step
+            function showStep(stepNumber) {
+                // Hide all steps
+                paramStep.style.display = 'none';
+                metadataStep.style.display = 'none';
+                connectionsStep.style.display = 'none';
+                reviewStep.style.display = 'none';
+
+                // Show current step
+                switch(stepNumber) {
+                    case 1:
+                        paramStep.style.display = 'block';
+                        break;
+                    case 2:
+                        metadataStep.style.display = 'block';
+                        break;
+                    case 3:
+                        connectionsStep.style.display = 'block';
+                        break;
+                    case 4:
+                        reviewStep.style.display = 'block';
+                        updateReviewPreview();
+                        break;
+                }
+
+                // Update button states
+                prevStepBtn.disabled = stepNumber === 1;
+                nextStepBtn.style.display = stepNumber === 4 ? 'none' : 'inline-block';
+                submitFinalBtn.style.display = stepNumber === 4 ? 'inline-block' : 'none';
+
+                currentStep = stepNumber;
+            }
+
+            // Function to update review preview
+            function updateReviewPreview() {
+                const previewContainer = document.getElementById('submit-final-preview');
+                if (!previewContainer) return;
+
+                const j = parseInt(document.getElementById('submit-j').value) || 0;
+                const x = parseInt(document.getElementById('submit-x').value) || 1;
+                const y = parseInt(document.getElementById('submit-y').value) || 1;
+                const z = parseInt(document.getElementById('submit-z').value) || 2;
+
+                const sequence = generateHiccup(j, x, y, z, 20);
+                const seq = sequence.seq;
+
+                previewContainer.innerHTML = `
+                    <div class="sequence-display">
+                        <h4>Sequence Preview:</h4>
+                        <div class="sequence-terms">${seq.map(n => `<span class="term">${n}</span>`).join('')}</div>
+                    </div>
+                    <div class="input-group">
+                        <label>Parameters:</label>
+                        <p>j=${j}, x=${x}, y=${y}, z=${z}</p>
+                    </div>
+                    <div class="input-group">
+                        <label>Metadata:</label>
+                        <p><strong>Title:</strong> ${document.getElementById('submit-title').value || '(not provided)'}</p>
+                        <p><strong>Description:</strong> ${document.getElementById('submit-description').value || '(not provided)'}</p>
+                    </div>
+                    <div class="input-group">
+                        <label>Mathematical Connections:</label>
+                        <p><strong>Formula:</strong> ${document.getElementById('submit-formula').value || '(not provided)'}</p>
+                        <p><strong>Beatty:</strong> ${document.getElementById('submit-beatty').value}</p>
+                        <p><strong>Slope:</strong> ${document.getElementById('submit-slope').value || '(not provided)'}</p>
+                        <p><strong>Morphism:</strong> ${document.getElementById('submit-morphism').value || '(not provided)'}</p>
+                    </div>
+                `;
+            }
+
+            // Event listeners for step navigation
+            if (step1NextBtn) {
+                step1NextBtn.addEventListener('click', function() {
+                    // Validate parameters before moving to next step
+                    const j = parseInt(document.getElementById('submit-j').value) || 0;
+                    const x = parseInt(document.getElementById('submit-x').value) || 0;
+                    const y = parseInt(document.getElementById('submit-y').value) || 0;
+                    const z = parseInt(document.getElementById('submit-z').value) || 0;
+
+                    let valid = true;
+                    let message = '';
+
+                    if (y === z) {
+                        valid = false;
+                        message = 'y and z parameters must be different';
+                    } else if (j < 0 || x < 0 || y < 1 || z < 1) {
+                        valid = false;
+                        message = 'j,x must be ≥0 and y,z must be ≥1';
+                    }
+
+                    if (!valid) {
+                        document.getElementById('submit-param-warning').textContent = `⚠️ ${message}`;
+                        document.getElementById('submit-param-warning').style.color = 'var(--danger)';
+                        return;
+                    }
+
+                    document.getElementById('submit-param-warning').textContent = '';
+                    showStep(2);
+                });
+            }
+
+            if (step2PrevBtn) {
+                step2PrevBtn.addEventListener('click', function() {
+                    showStep(1);
+                });
+            }
+
+            if (step2NextBtn) {
+                step2NextBtn.addEventListener('click', function() {
+                    // Validate metadata before moving to next step
+                    const title = document.getElementById('submit-title').value.trim();
+                    const description = document.getElementById('submit-description').value.trim();
+
+                    if (!title) {
+                        alert('Please provide a title for your sequence');
+                        return;
+                    }
+
+                    if (!description) {
+                        alert('Please provide a description for your sequence');
+                        return;
+                    }
+
+                    showStep(3);
+                });
+            }
+
+            if (step3PrevBtn) {
+                step3PrevBtn.addEventListener('click', function() {
+                    showStep(2);
+                });
+            }
+
+            if (step3NextBtn) {
+                step3NextBtn.addEventListener('click', function() {
+                    showStep(4);
+                });
+            }
+
+            if (step4PrevBtn) {
+                step4PrevBtn.addEventListener('click', function() {
+                    showStep(3);
+                });
+            }
+
+            if (step4SubmitBtn) {
+                step4SubmitBtn.addEventListener('click', function() {
+                    // Handle final submission
+                    handleSubmissionSubmit();
+                });
+            }
+
+            // Also handle the old navigation buttons for backward compatibility
+            if (prevStepBtn && nextStepBtn) {
+                prevStepBtn.addEventListener('click', function() {
+                    if (currentStep > 1) {
+                        showStep(currentStep - 1);
+                    }
+                });
+
+                nextStepBtn.addEventListener('click', function() {
+                    if (currentStep < 4) {
+                        showStep(currentStep + 1);
+                    }
+                });
+            }
+
+            // Initialize form to step 1
+            showStep(1);
+
+            // Add event listeners for parameter inputs to update preview and validation
+            const paramInputs = ['submit-j', 'submit-x', 'submit-y', 'submit-z'];
+            paramInputs.forEach(id => {
+                const input = document.getElementById(id);
+                if (input) {
+                    input.addEventListener('input', function() {
+                        updateSubmitPreview();
+                        updateSubmitParamInfo();
+                        updateSubmitParamWarning();
+                    });
+                }
+            });
+
+            // Initialize parameter info and warning
+            updateSubmitParamInfo();
+            updateSubmitParamWarning();
+        });
     </script>
 </body>
 </html>
