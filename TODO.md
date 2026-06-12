@@ -9,7 +9,7 @@
 
 ## TODO Items
 
-1. [ ] Light/Dark theme toggle – minimal circle half black/half white in header
+1. [x] Light/Dark theme toggle – minimal circle half black/half white in header
 2. [ ] Replace plotter tabs with a single “Update Chart” toggle button
 3. [ ] Add export/download options (CSV for sequence, PNG for chart)
 4. [ ] URL state persistence (hash‑based sharing)

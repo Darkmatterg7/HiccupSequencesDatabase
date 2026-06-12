@@ -1007,6 +1007,54 @@ body.light-theme {
   border-radius: 50%;
   background: linear-gradient(90deg, #000 50%, #fff 50%);
 }
+/* Light‑theme overrides for components that use fixed dark gradients */
+
+/* Term badges – sequence display */
+body.light-theme .term-badge {
+  background: rgba(255, 255, 255, 0.85); /* light, slightly translucent */
+}
+body.light-theme .term-badge.step-y {
+  background: linear-gradient(
+    135deg,
+    rgba(232, 168, 56, 0.15) 0%,
+    rgba(255, 255, 255, 0.85) 100%
+  );
+}
+body.light-theme .term-badge.step-z {
+  background: linear-gradient(
+    135deg,
+    rgba(60, 174, 163, 0.15) 0%,
+    rgba(255, 255, 255, 0.85) 100%
+  );
+}
+
+/* Match card – database info */
+body.light-theme .match-card {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.9) 0%,
+    rgba(245, 245, 245, 0.95) 100%
+  );
+}
+
+/* Plotter canvas wrapper */
+body.light-theme .plotter-canvas-wrapper {
+  background: rgba(250, 250, 250, 0.8);
+  border-color: var(--border-color);
+}
+
+/* Ensure alert panels use the overridden variables (they already do, but we keep them explicit) */
+body.light-theme .alert-panel.danger {
+  background: var(--danger-bg);
+}
+body.light-theme .alert-panel.success {
+  background: var(--success-bg);
+}
+
+/* Optional: subtle text‑color tweak for better contrast on light badges */
+body.light-theme .term-badge .val {
+  color: var(--text);
+}
   </style>
 </head>
 <body>
