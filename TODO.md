@@ -41,9 +41,9 @@
     - [x] Generate Sequence button
     - [x] Copy to Clipboard button
     - [x] Export as JSON button
-    - [ ] Find Matches button
-    - [ ] Update Chart button
-    - [ ] Match input textarea handler
+    - [x] Find Matches button
+    - [x] Update Chart button
+    - [x] Match input textarea handler
 - [ ] Test functionality after each implementation
 - [ ] Verify responsive design works
 - [ ] Ensure all existing functionality remains intact

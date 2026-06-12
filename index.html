@@ -541,7 +541,7 @@
                 <label for="analysis-terms">Number of terms:</label>
                 <input type="number" id="analysis-terms" min="10" max="500" value="100">
             </div>
-            <button class="btn btn-primary" id="analysis-btn">Update Chart</button>
+            <button class="btn btn-primary" id="analysis-btn">Show Residual Plot</button>
 
             <div class="chart-container">
                 <canvas id="analysisChart"></canvas>
@@ -1616,6 +1616,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Check if we can access the legacy functions and database
         const hasLegacyFunctions = (typeof generateHiccup !== 'undefined' &&
                                   typeof seqDatabase !== 'undefined');
+        let generationPlotMode = 'growth'; // 'growth' or 'residual'
 
         // Use legacy functions if available, otherwise use local implementations
         const localGenerateHiccup = hasLegacyFunctions ? generateHiccup : function(j, x, y, z, n) {
@@ -1723,6 +1724,23 @@ document.addEventListener('DOMContentLoaded', function() {
             if (matches.length === 0) return null;
             return { ...matches[0], allMatches: matches };
         };
+
+        // Helper to compute linear regression (slope, intercept) for sequence
+        function linearRegression(seq) {
+            const n = seq.length;
+            let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+            for (let i = 0; i < n; i++) {
+                const x = i + 1; // 1-indexed
+                const y = seq[i];
+                sumX += x;
+                sumY += y;
+                sumXY += x * y;
+                sumXX += x * x;
+            }
+            const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+            const intercept = (sumY - slope * sumX) / n;
+            return { slope, intercept };
+        }
 
         // Helper function for matches
         function addDatabaseMatch(matches, seen, match) {
@@ -1958,7 +1976,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Create generation chart
-        function createGenerationChart(seq, steps, matchResult = null) {
+        function createGenerationChart(seq, steps, matchResult = null, mode = generationPlotMode) {
             const chartContainer = document.getElementById('generation-chart-container');
             if (!chartContainer) return;
 
@@ -1974,24 +1992,6 @@ document.addEventListener('DOMContentLoaded', function() {
             // Clear canvas
             ctx.clearRect(0, 0, width, height);
 
-            // Use existing charting approach from legacy if available
-            if (hasLegacyFunctions && typeof drawSequenceChart !== 'undefined' && typeof currentGeneratedData !== 'undefined') {
-                // Use the legacy charting approach
-                currentGeneratedData = { seq, steps, entry: matchResult ? matchResult.entry : null, j, x, y, z };
-                drawSequenceChart();
-                return;
-            }
-
-            // Fallback to simple chart
-            // Simple line chart showing sequence growth
-            ctx.strokeStyle = 'var(--accent)';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-
-            const maxVal = Math.max(...seq);
-            const minVal = Math.min(...seq);
-            const valRange = maxVal - minVal || 1;
-
             // Add padding
             const padding = 20;
             const plotWidth = width - 2 * padding;
@@ -2006,13 +2006,62 @@ document.addEventListener('DOMContentLoaded', function() {
             ctx.lineTo(width - padding, padding); // X-axis
             ctx.stroke();
 
-            // Draw sequence line
-            ctx.strokeStyle = 'var(--accent)';
+            // Determine data to plot based on mode
+            let yData = [];
+            let lineColor = 'var(--accent)';
+
+            if (mode === 'growth') {
+                // Growth mode: plot sequence value vs index
+                yData = seq.slice(); // copy
+                lineColor = 'var(--accent)';
+            } else if (mode === 'residual') {
+                // Residual mode: plot residuals (sequence - fitted line)
+                const reg = linearRegression(seq);
+                yData = seq.map((val, idx) => val - ((idx + 1) * reg.slope + reg.intercept));
+                lineColor = 'var(--teal)';
+            } else {
+                // Default to growth
+                yData = seq.slice();
+                lineColor = 'var(--accent)';
+            }
+
+            // Find min & max of yData for scaling
+            let yMin = Math.min(...yData);
+            let yMax = Math.max(...yData);
+            let yRange = yMax - yMin;
+            if (yRange === 0) yRange = 1;
+            // Add padding
+            const yPadding = yRange * 0.1;
+            yMin -= yPadding;
+            yMax += yPadding;
+
+            // Scaling helper functions
+            function mapX(xVal) {
+                return padding + ((xVal - 1) / (seq.length - 1)) * plotWidth;
+            }
+            function mapY(yVal) {
+                return height - padding - ((yVal - yMin) / (yMax - yMin)) * plotHeight;
+            }
+
+            // Draw optional zero line for residual mode
+            if (mode === 'residual') {
+                ctx.strokeStyle = 'rgba(232, 168, 56, 0.2)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([2, 2]);
+                ctx.beginPath();
+                ctx.moveTo(mapX(1), mapY(0));
+                ctx.lineTo(mapX(seq.length), mapY(0));
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // Draw data line
+            ctx.strokeStyle = lineColor;
             ctx.lineWidth = 2;
             ctx.beginPath();
-            seq.forEach((val, index) => {
-                const x = padding + (index / (seq.length - 1)) * plotWidth;
-                const y = height - padding - ((val - minVal) / valRange) * plotHeight;
+            yData.forEach((yVal, index) => {
+                const x = mapX(index + 1);
+                const y = mapY(yVal);
                 if (index === 0) {
                     ctx.moveTo(x, y);
                 } else {
@@ -2023,8 +2072,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // Draw points
             seq.forEach((val, index) => {
-                const x = padding + (index / (seq.length - 1)) * plotWidth;
-                const y = height - padding - ((val - minVal) / valRange) * plotHeight;
+                const x = mapX(index + 1);
+                const y = mapY(yData[index]);
                 ctx.beginPath();
                 ctx.arc(x, y, 3, 0, 2 * Math.PI);
                 ctx.fillStyle = steps[index] === 'y' ? 'var(--accent)' : 'var(--teal)';
@@ -2178,16 +2227,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Update Chart button handler (for analysis tab)
         function updateChart() {
-            const analysisType = document.getElementById('analysis-type').value;
-            const termsCount = parseInt(document.getElementById('analysis-terms').value) || 100;
+            // Toggle between growth and residual plot modes
+            generationPlotMode = generationPlotMode === 'growth' ? 'residual' : 'growth';
 
-            // If we have current generated data, regenerate chart with new parameters
-            if (currentGeneratedData && hasLegacyFunctions) {
-                showToast(`Updating chart for ${analysisType} mode...`, 'info');
-                // In a full implementation, we would switch plot modes and redraw
-                // For now, just show a toast
+            // Update button text
+            const btn = document.getElementById('analysis-btn');
+            if (btn) {
+                btn.textContent = generationPlotMode === 'growth'
+                    ? 'Show Residual Plot'
+                    : 'Show Growth Plot';
+            }
+
+            // If we have current generated data, regenerate chart with new mode
+            if (currentGeneratedData) {
+                showToast(`Switching to ${generationPlotMode} plot mode...`, 'info');
+                createGenerationChart(
+                    currentGeneratedData.seq,
+                    currentGeneratedData.steps,
+                    currentGeneratedData.matchResult,
+                    generationPlotMode
+                );
             } else {
-                showToast(`Chart update functionality for ${analysisType} with ${termsCount} terms - ready to use with generated sequences`, 'info');
+                showToast(`No sequence generated yet. Generate a sequence to see ${generationPlotMode === 'growth' ? 'growth' : 'residual'} plot.`, 'warning');
             }
         }
 
