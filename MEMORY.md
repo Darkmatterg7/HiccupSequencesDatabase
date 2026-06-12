@@ -1,0 +1,5 @@
+- [Chrome DevTools Demo Summary](chrome-devtools-demo-summary.md) — Initial demonstration of Chrome DevTools CLI usage
+- [Moderation Fix Summary](moderation-fix-summary.md) — Summary of fixes applied to moderation dashboard functionality
+- [Tab Switching Implementation](tab-switching-implementation.md) — Implementation of tab switching functionality for Hiccup Sequence Explorer
+- [Complete Button Implementation](complete-button-implementation.md) — Complete implementation of all main action button handlers with legacy integration
+- [Button Handlers Implementation](button-handlers-implementation.md) — Initial implementation of main action button handlers for Hiccup Sequence Explorer

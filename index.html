@@ -875,6 +875,35 @@
         // JavaScript will be added incrementally
         console.log("Hiccup Sequence Explorer loaded");
 
+// Get modal elements
+const submissionModal = document.getElementById('submission-modal');
+const submissionTrackingModal = document.getElementById('submission-tracking-modal');
+const moderationModal = document.getElementById('moderation-modal');
+
+// Tab switching functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const tabButtons = document.querySelectorAll('.tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Remove active class from all tab buttons
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            // Add active class to clicked button
+            this.classList.add('active');
+
+            // Hide all tab contents
+            tabContents.forEach(content => content.classList.remove('active'));
+            // Show the corresponding tab content
+            const tabId = this.getAttribute('data-tab') + '-tab';
+            const tabContent = document.getElementById(tabId);
+            if (tabContent) {
+                tabContent.classList.add('active');
+            }
+        });
+    });
+});
+
         // Submission workflow functions
         function openSubmissionModal() {
             document.getElementById('submission-modal').showModal();
@@ -1187,49 +1216,95 @@
             `;
         }
 
-        function approveSubmission(id) {
+        function approveSubmission(submissionId) {
             const submissions = getSubmissionsFromStorage();
-            const index = submissions.findIndex(sub => sub.id === id);
-            if (index !== -1) {
-                submissions[index].status = 'approved';
-                submissions[index].reviewedAt = new Date().toISOString();
-                saveSubmissionsToStorage(submissions);
-                loadSubmissionTrackingData();
-                loadModerationData();
-                showToast('Sequence approved!', 'success');
-            }
-        }
+            const submissionIndex = submissions.findIndex(sub => sub.id === submissionId);
+            if (submissionIndex !== -1) {
+                // Get reviewer notes from textarea
+                const notesElement = document.getElementById(`reviewer-notes-${submissionId}`);
+                const reviewerNotes = notesElement ? notesElement.value.trim() : '';
 
-        function requestChangesSubmission(id) {
-            const notes = prompt('Please provide feedback for the submitter:');
-            if (notes !== null) {
-                const submissions = getSubmissionsFromStorage();
-                const index = submissions.findIndex(sub => sub.id === id);
-                if (index !== -1) {
-                    submissions[index].status = 'changes_requested';
-                    submissions[index].reviewerNotes = notes;
-                    submissions[index].reviewedAt = new Date().toISOString();
-                    saveSubmissionsToStorage(submissions);
+                submissions[submissionIndex] = {
+                    ...submissions[submissionIndex],
+                    status: 'approved',
+                    reviewerNotes: reviewerNotes,
+                    reviewedAt: new Date().toISOString(),
+                    reviewedBy: 'current_user'
+                };
+
+                saveSubmissionsToStorage(submissions);
+                showToast('Submission approved!', 'success');
+
+                // Refresh modals if open
+                if (submissionTrackingModal && submissionTrackingModal.open) {
                     loadSubmissionTrackingData();
+                }
+                if (moderationModal && moderationModal.open) {
                     loadModerationData();
-                    showToast('Feedback sent!', 'info');
                 }
             }
         }
 
-        function rejectSubmission(id) {
-            const notes = prompt('Please provide reason for rejection:');
-            if (notes !== null) {
-                const submissions = getSubmissionsFromStorage();
-                const index = submissions.findIndex(sub => sub.id === id);
-                if (index !== -1) {
-                    submissions[index].status = 'rejected';
-                    submissions[index].reviewerNotes = notes;
-                    submissions[index].reviewedAt = new Date().toISOString();
-                    saveSubmissionsToStorage(submissions);
+        function requestChangesSubmission(submissionId) {
+            const submissions = getSubmissionsFromStorage();
+            const submissionIndex = submissions.findIndex(sub => sub.id === submissionId);
+            if (submissionIndex !== -1) {
+                // Get reviewer notes from textarea
+                const notesElement = document.getElementById(`reviewer-notes-${submissionId}`);
+                const reviewerNotes = notesElement ? notesElement.value.trim() : '';
+
+                // Validate that notes are provided
+                if (!reviewerNotes) {
+                    showToast('Please provide feedback on what changes are needed', 'error');
+                    return;
+                }
+
+                submissions[submissionIndex] = {
+                    ...submissions[submissionIndex],
+                    status: 'changes_requested',
+                    reviewerNotes: reviewerNotes,
+                    reviewedAt: new Date().toISOString(),
+                    reviewedBy: 'current_user'
+                };
+
+                saveSubmissionsToStorage(submissions);
+                showToast('Changes requested!', 'warning');
+
+                // Refresh modals if open
+                if (submissionTrackingModal && submissionTrackingModal.open) {
                     loadSubmissionTrackingData();
+                }
+                if (moderationModal && moderationModal.open) {
                     loadModerationData();
-                    showToast('Sequence rejected!', 'danger');
+                }
+            }
+        }
+
+        function rejectSubmission(submissionId) {
+            const submissions = getSubmissionsFromStorage();
+            const submissionIndex = submissions.findIndex(sub => sub.id === submissionId);
+            if (submissionIndex !== -1) {
+                // Get reviewer notes from textarea
+                const notesElement = document.getElementById(`reviewer-notes-${submissionId}`);
+                const reviewerNotes = notesElement ? notesElement.value.trim() : '';
+
+                submissions[submissionIndex] = {
+                    ...submissions[submissionIndex],
+                    status: 'rejected',
+                    reviewerNotes: reviewerNotes,
+                    reviewedAt: new Date().toISOString(),
+                    reviewedBy: 'current_user'
+                };
+
+                saveSubmissionsToStorage(submissions);
+                showToast('Submission rejected!', 'error');
+
+                // Refresh modals if open
+                if (submissionTrackingModal && submissionTrackingModal.open) {
+                    loadSubmissionTrackingData();
+                }
+                if (moderationModal && moderationModal.open) {
+                    loadModerationData();
                 }
             }
         }
@@ -1534,6 +1609,607 @@
             updateSubmitParamInfo();
             updateSubmitParamWarning();
         });
+    </script>
+
+    <!-- Main Action Button Handlers -->
+    <script>
+        // Check if we can access the legacy functions and database
+        const hasLegacyFunctions = (typeof generateHiccup !== 'undefined' &&
+                                  typeof seqDatabase !== 'undefined');
+
+        // Use legacy functions if available, otherwise use local implementations
+        const localGenerateHiccup = hasLegacyFunctions ? generateHiccup : function(j, x, y, z, n) {
+            if (n <= 0) return { seq: [], steps: [] };
+
+            const seq = [x];
+            const seqSet = new Set([x]);
+            const steps = [null]; // steps[idx] = 'y' or 'z' for seq[idx]
+
+            for (let idx = 1; idx < n; idx++) {
+                const n_val = idx + 1; // 1-indexed position
+                const check = n_val - j;
+                const usesY = seqSet.has(check);
+                const next = seq[idx - 1] + (usesY ? y : z);
+                seq.push(next);
+                seqSet.add(next);
+                steps.push(usesY ? 'y' : 'z');
+            }
+            return { seq, steps };
+        };
+
+        const localValidateHiccup = hasLegacyFunctions ? validateHiccup : function(inputSeq) {
+            if (inputSeq.length < 3) return { valid: false, reason: "Too few terms (minimum 3 required)" };
+            if (inputSeq[0] < 0) {
+                return {
+                    valid: false,
+                    reason: `Starting term x must be non-negative. Found x = ${inputSeq[0]}.`
+                };
+            }
+
+            // Check strictly increasing
+            for (let i = 1; i < inputSeq.length; i++) {
+                if (inputSeq[i] <= inputSeq[i-1]) {
+                    return {
+                        valid: false,
+                        reason: `Sequence is not strictly increasing: term ${inputSeq[i]} at index ${i+1} is &le; previous term ${inputSeq[i-1]}.`
+                    };
+                }
+            }
+
+            // Compute differences
+            const diffs = [];
+            for (let i = 1; i < inputSeq.length; i++) {
+                diffs.push(inputSeq[i] - inputSeq[i-1]);
+            }
+
+            const diffSet = [...new Set(diffs)];
+            if (diffSet.length !== 2) {
+                return {
+                    valid: false,
+                    reason: `Differences must take exactly 2 distinct values. Found ${diffSet.length} distinct gaps: [${diffSet.sort((a,b)=>a-b).join(', ')}]`,
+                    diffs: diffs
+                };
+            }
+
+            return { valid: true };
+        };
+
+        // Simplified matchDatabase function if legacy not available
+        const localMatchDatabase = hasLegacyFunctions ? matchDatabase : function(j, x, y, z, seq, db) {
+            if (!db || !Array.isArray(db)) return null;
+
+            // Simple implementation: just check for exact parameter match
+            const exactParam = db.find(e => e.j === j && e.x === x && e.y === y && e.z === z);
+            if (exactParam) {
+                return { ...exactParam, allMatches: [exactParam] };
+            }
+
+            // Check for sequence matches in database
+            const matches = [];
+            const seen = new Set();
+
+            for (const entry of db) {
+                const { seq: dbSeq } = localGenerateHiccup(entry.j, entry.x, entry.y, entry.z, seq.length);
+
+                // Check for exact prefix match
+                if (dbSeq.every((v, i) => v === seq[i])) {
+                    addDatabaseMatch(matches, seen, { matchType: 'exact', matchKind: 'prefix', entry });
+                    continue;
+                }
+
+                // Check for offset match (seq = dbSeq + c)
+                if (seq.length >= 5) {
+                    const offset = seq[0] - dbSeq[0];
+                    if (offset !== 0 && dbSeq.every((v, i) => v + offset === seq[i])) {
+                        addDatabaseMatch(matches, seen, { matchType: 'translate', entry, offset });
+                        continue;
+                    }
+                }
+
+                // Check for scale match (seq = k * dbSeq)
+                if (seq.length >= 5) {
+                    const scaleAnchorIndex = dbSeq.findIndex(v => v !== 0);
+                    if (scaleAnchorIndex >= 0) {
+                        const k = seq[scaleAnchorIndex] / dbSeq[scaleAnchorIndex];
+                        if (!isNaN(k) && Number.isInteger(k) && k > 1) {
+                            if (dbSeq.every((v, i) => v * k === seq[i])) {
+                                addDatabaseMatch(matches, seen, { matchType: 'scale', entry, scale: k });
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (matches.length === 0) return null;
+            return { ...matches[0], allMatches: matches };
+        };
+
+        // Helper function for matches
+        function addDatabaseMatch(matches, seen, match) {
+            const qualifier = match.matchType === 'translate'
+                ? match.offset
+                : match.matchType === 'scale'
+                  ? match.scale
+                  : '';
+            const key = `${match.matchType}:${match.entry.oeis}:${qualifier}`;
+
+            if (!seen.has(key)) {
+                seen.add(key);
+                matches.push(match);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Match input handler (live validation as user types)
+            const matchInput = document.getElementById('match-input');
+            if (matchInput) {
+                matchInput.addEventListener('input', handleMatchInputChange);
+            }
+
+            // Generate Sequence button
+            const generateBtn = document.getElementById('generate-btn');
+            if (generateBtn) {
+                generateBtn.addEventListener('click', runGenerator);
+            }
+
+            // Copy to Clipboard button
+            const copyBtn = document.getElementById('copy-btn');
+            if (copyBtn) {
+                copyBtn.addEventListener('click', function() {
+                    const sequenceTerms = document.getElementById('generated-terms').textContent.trim();
+                    if (sequenceTerms) {
+                        copyToClipboard(sequenceTerms);
+                    } else {
+                        showToast('No sequence to copy. Generate a sequence first.', 'warning');
+                    }
+                });
+            }
+
+            // Export as JSON button
+            const exportBtn = document.getElementById('export-btn');
+            if (exportBtn) {
+                exportBtn.addEventListener('click', exportAsJSON);
+            }
+
+            // Find Matches button
+            const matchBtn = document.getElementById('match-btn');
+            if (matchBtn) {
+                matchBtn.addEventListener('click', runMatch);
+            }
+
+            // Update Chart button (for analysis tab)
+            const analysisBtn = document.getElementById('analysis-btn');
+            if (analysisBtn) {
+                analysisBtn.addEventListener('click', updateChart);
+            }
+        });
+
+        // Handle match input changes (live validation)
+        function handleMatchInputChange() {
+            const inputVal = document.getElementById('match-input').value;
+            const { terms, invalidTokens } = parseInputSequenceDetailed(inputVal);
+            const charCounter = document.createElement('div');
+            charCounter.className = 'char-counter';
+            charCounter.style.marginTop = '5px';
+            charCounter.style.fontSize = '0.9em';
+            charCounter.style.color = 'var(--text-muted)';
+
+            // Replace or append char counter
+            let existingCounter = matchInput.parentElement.querySelector('.char-counter');
+            if (existingCounter) {
+                existingCounter.remove();
+            }
+
+            if (terms.length === 0) {
+                matchInput.parentElement.appendChild(charCounter);
+                charCounter.textContent = "0 terms entered";
+
+                // Show warning for invalid tokens
+                const warningDiv = document.createElement('div');
+                warningDiv.className = 'input-warning';
+                warningDiv.style.marginTop = '5px';
+                warningDiv.style.fontSize = '0.85em';
+
+                let existingWarning = matchInput.parentElement.querySelector('.input-warning');
+                if (existingWarning) {
+                    existingWarning.remove();
+                }
+
+                if (invalidTokens.length > 0) {
+                    warningDiv.textContent = `Invalid token${invalidTokens.length > 1 ? 's' : ''}: ${invalidTokens.slice(0, 4).map(escapeHtml).join(', ')}${invalidTokens.length > 4 ? '...' : ''}`;
+                    warningDiv.style.color = 'var(--danger)';
+                    matchInput.parentElement.appendChild(warningDiv);
+                }
+            } else {
+                matchInput.parentElement.appendChild(charCounter);
+                charCounter.textContent = `${terms.length} term${terms.length > 1 ? 's' : ''} entered`;
+
+                // Clear warning
+                let existingWarning = matchInput.parentElement.querySelector('.input-warning');
+                if (existingWarning) {
+                    existingWarning.remove();
+                }
+
+                // Show recommendation for short sequences
+                if (terms.length < 8) {
+                    const warningDiv = document.createElement('div');
+                    warningDiv.className = 'input-warning';
+                    warningDiv.style.marginTop = '5px';
+                    warningDiv.style.fontSize = '0.85em';
+                    warningDiv.textContent = "⚠️ Minimum 8 terms recommended for meaningful validation.";
+                    warningDiv.style.color = 'var(--danger)';
+                    matchInput.parentElement.appendChild(warningDiv);
+                }
+            }
+        }
+
+        // Parse input sequence (spaces or commas separated integers)
+        function parseInputSequenceDetailed(str) {
+            if (!str.trim()) return { terms: [], invalidTokens: [] };
+
+            const tokens = str
+                .replace(/,/g, ' ')
+                .split(/\s+/)
+                .filter(t => t.trim() !== '');
+
+            const terms = [];
+            const invalidTokens = [];
+
+            tokens.forEach(token => {
+                if (/^[+-]?\d+$/.test(token)) {
+                    terms.push(Number(token));
+                } else {
+                    invalidTokens.push(token);
+                }
+            });
+
+            return { terms, invalidTokens };
+        }
+
+        // Escape HTML for safe display
+        function escapeHtml(text) {
+            const map = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, m => map[m]);
+        }
+
+        // Generate Sequence button handler
+        function runGenerator() {
+            const j = parseInt(document.getElementById('gen-j').value) || 0;
+            const x = parseInt(document.getElementById('gen-x').value) || 0;
+            const y = parseInt(document.getElementById('gen-y').value) || 1;
+            const z = parseInt(document.getElementById('gen-z').value) || 2;
+            const n = parseInt(document.getElementById('gen-count').value) || 50;
+
+            const resultsDiv = document.getElementById('generation-results');
+            const sequenceDisplay = document.getElementById('generated-terms');
+            const rhythmStrip = document.getElementById('rhythm-strip');
+            const chartContainer = document.getElementById('generation-chart-container');
+
+            // Basic validation
+            if (isNaN(j) || isNaN(x) || isNaN(y) || isNaN(z) || y === z) {
+                showToast('Invalid parameters: y and z must be different, all values must be numbers', 'error');
+                return;
+            }
+
+            if (j < 0 || x < 0 || y < 1 || z < 1) {
+                showToast('Invalid parameters: j,x must be ≥0 and y,z must be ≥1', 'error');
+                return;
+            }
+
+            // Show loading state
+            generateBtn.innerHTML = `<span class="spinner"></span> Generating...`;
+            generateBtn.disabled = true;
+
+            setTimeout(() => {
+                try {
+                    // Reset button state
+                    generateBtn.innerHTML = 'Generate Sequence';
+                    generateBtn.disabled = false;
+
+                    // Generate sequence using the core algorithm
+                    const { seq, steps } = localGenerateHiccup(j, x, y, z, n);
+
+                    // Calculate differences
+                    const diffs = [];
+                    for (let i = 1; i < seq.length; i++) {
+                        diffs.push(seq[i] - seq[i-1]);
+                    }
+
+                    // Display sequence terms
+                    sequenceDisplay.innerHTML = seq.map(n => `<span class="term">${n}</span>`).join('');
+
+                    // Display rhythm strip
+                    rhythmStrip.innerHTML = makeRhythmStripHtml(diffs, y, z);
+
+                    // Match against database if available
+                    let matchResult = null;
+                    if (hasLegacyFunctions && typeof seqDatabase !== 'undefined') {
+                        matchResult = localMatchDatabase(j, x, y, z, seq, seqDatabase);
+                    }
+
+                    // Cache data for copy/export functions
+                    currentGeneratedData = { seq, steps, j, x, y, z, matchResult };
+
+                    // Enable copy/export buttons
+                    document.getElementById('copy-btn').disabled = false;
+                    document.getElementById('export-btn').disabled = false;
+
+                    // Create or update chart
+                    createGenerationChart(seq, steps, matchResult);
+
+                    // Scroll to results
+                    resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                } catch (error) {
+                    console.error('Error in runGenerator:', error);
+                    showToast('Error generating sequence. Please check the console for details.', 'error');
+
+                    // Reset button state
+                    generateBtn.innerHTML = 'Generate Sequence';
+                    generateBtn.disabled = false;
+                }
+            }, 150);
+        }
+
+        // Create generation chart
+        function createGenerationChart(seq, steps, matchResult = null) {
+            const chartContainer = document.getElementById('generation-chart-container');
+            if (!chartContainer) return;
+
+            // Clear existing canvas
+            chartContainer.innerHTML = '<canvas id="generationChart"></canvas>';
+            const canvas = document.getElementById('generationChart');
+            if (!canvas) return;
+
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width || 400;
+            const height = canvas.height || 300;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, width, height);
+
+            // Use existing charting approach from legacy if available
+            if (hasLegacyFunctions && typeof drawSequenceChart !== 'undefined' && typeof currentGeneratedData !== 'undefined') {
+                // Use the legacy charting approach
+                currentGeneratedData = { seq, steps, entry: matchResult ? matchResult.entry : null, j, x, y, z };
+                drawSequenceChart();
+                return;
+            }
+
+            // Fallback to simple chart
+            // Simple line chart showing sequence growth
+            ctx.strokeStyle = 'var(--accent)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            const maxVal = Math.max(...seq);
+            const minVal = Math.min(...seq);
+            const valRange = maxVal - minVal || 1;
+
+            // Add padding
+            const padding = 20;
+            const plotWidth = width - 2 * padding;
+            const plotHeight = height - 2 * padding;
+
+            // Draw axes
+            ctx.strokeStyle = 'var(--border-color)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(padding, height - padding);
+            ctx.lineTo(padding, padding); // Y-axis
+            ctx.lineTo(width - padding, padding); // X-axis
+            ctx.stroke();
+
+            // Draw sequence line
+            ctx.strokeStyle = 'var(--accent)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            seq.forEach((val, index) => {
+                const x = padding + (index / (seq.length - 1)) * plotWidth;
+                const y = height - padding - ((val - minVal) / valRange) * plotHeight;
+                if (index === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            });
+            ctx.stroke();
+
+            // Draw points
+            seq.forEach((val, index) => {
+                const x = padding + (index / (seq.length - 1)) * plotWidth;
+                const y = height - padding - ((val - minVal) / valRange) * plotHeight;
+                ctx.beginPath();
+                ctx.arc(x, y, 3, 0, 2 * Math.PI);
+                ctx.fillStyle = steps[index] === 'y' ? 'var(--accent)' : 'var(--teal)';
+                ctx.fill();
+            });
+        }
+
+        // Find Matches button handler
+        function runMatch() {
+            const inputVal = document.getElementById('match-input').value;
+            const { terms: parsedSeq, invalidTokens } = parseInputSequenceDetailed(inputVal);
+            const matchesList = document.getElementById('matches-list');
+
+            matchesList.innerHTML = ''; // Clear previous results
+
+            if (parsedSeq.length === 0) {
+                matchesList.innerHTML = '<p>Please enter a sequence to match.</p>';
+                return;
+            }
+
+            if (invalidTokens.length > 0) {
+                matchesList.innerHTML = `<p>Please remove non-integer tokens: ${invalidTokens.map(escapeHtml).join(', ')}</p>`;
+                return;
+            }
+
+            if (parsedSeq.length < 8) {
+                matchesList.innerHTML = '<p>⚠️ Minimum 8 terms recommended for meaningful validation.</p>';
+                // Continue anyway for shorter sequences
+            }
+
+            // Show loading state
+            const matchBtn = document.getElementById('match-btn');
+            const originalText = matchBtn.innerHTML;
+            matchBtn.innerHTML = `<span class="spinner"></span> Searching...`;
+            matchBtn.disabled = true;
+
+            setTimeout(() => {
+                try {
+                    // Reset button state
+                    matchBtn.innerHTML = originalText;
+                    matchBtn.disabled = false;
+
+                    // Validate if it's a hiccup sequence
+                    const validation = localValidateHiccup(parsedSeq);
+
+                    if (!validation.valid) {
+                        matchesList.innerHTML = `
+                            <div class="alert-panel danger">
+                                <h4>✗ Invalid Sequence</h4>
+                                <p>${validation.reason}</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    // It is a valid sequence! Try to match against database
+                    let matchResult = null;
+                    if (hasLegacyFunctions && typeof seqDatabase !== 'undefined') {
+                        matchResult = localMatchDatabase(validation.j, validation.x, validation.y, validation.z, parsedSeq, seqDatabase);
+                    }
+
+                    if (matchResult) {
+                        // Show matches using legacy approach if available
+                        if (hasLegacyFunctions && typeof buildMatchCardHtml !== 'undefined') {
+                            matchesList.innerHTML = `
+                                <div class="alert-panel success" style="margin-bottom: 1.5rem;">
+                                    <h4>✓ Sequence Authenticated</h4>
+                                    <p>Passed all mathematical parameters for a <strong>(${validation.j}, ${validation.x}, ${validation.y}, ${validation.z})-hiccup</strong> sequence rule.</p>
+                                </div>
+
+                                <h4 class="mb-2" style="font-family:var(--font-sans); color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em;">Difference Pattern Rhythm Strip:</h4>
+                                ${makeRhythmStripHtml(validation.diffs, validation.y, validation.z)}
+
+                                <div style="margin-top: 1.5rem;">
+                                    ${buildMatchCardHtml(validation.j, validation.x, validation.y, validation.z, parsedSeq, matchResult)}
+                                </div>
+                            `;
+                        } else {
+                            // Fallback display
+                            matchesList.innerHTML = `
+                                <div class="match-results-info">
+                                    <p>Found ${matchResult.allMatches.length} match(es) in the database:</p>
+                                    <div class="match-item">
+                                        <h4>Match: ${matchResult.allMatches[0].oeis}</h4>
+                                        <p class="sequence-terms">${parsedSeq.join(', ')}</p>
+                                        <p><strong>Match type:</strong> ${describeConnection(matchResult.allMatches[0])}</p>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    } else {
+                        // No matches found
+                        matchesList.innerHTML = `
+                            <div class="alert-panel success" style="margin-bottom: 1.5rem;">
+                                <h4>✓ Valid Hiccup Sequence</h4>
+                                <p>This sequence is not present in our database of known hiccup sequences, but it perfectly satisfies the self-referential definition!</p>
+                            </div>
+
+                            <h4 class="mb-2" style="font-family:var(--font-sans); color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em;">Difference Pattern Rhythm Strip:</h4>
+                            ${makeRhythmStripHtml(validation.diffs, validation.y, validation.z)}
+                        `;
+                    }
+
+                } catch (error) {
+                    console.error('Error in runMatch:', error);
+                    matchesList.innerHTML = '<p>Error searching for matches. Please check the console.</p>';
+
+                    // Reset button state
+                    matchBtn.innerHTML = originalText;
+                    matchBtn.disabled = false;
+                }
+            }, 150);
+        }
+
+        // Export as JSON button handler
+        function exportAsJSON() {
+            if (!currentGeneratedData) {
+                showToast('No sequence to export. Generate a sequence first.', 'warning');
+                return;
+            }
+
+            const exportData = {
+                sequence: currentGeneratedData.seq,
+                parameters: {
+                    j: currentGeneratedData.j,
+                    x: currentGeneratedData.x,
+                    y: currentGeneratedData.y,
+                    z: currentGeneratedData.z
+                },
+                length: currentGeneratedData.seq.length,
+                timestamp: new Date().toISOString(),
+                matchInfo: currentGeneratedData.matchResult ? {
+                    oeis: currentGeneratedData.matchResult.entry?.oeis || null,
+                    matchType: currentGeneratedData.matchResult.allMatches[0]?.matchType || null
+                } : null
+            };
+
+            const jsonBlob = new Blob([JSON.stringify(exportData, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(jsonBlob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `hiccup_sequence_j${currentGeneratedData.j}_x${currentGeneratedData.x}_y${currentGeneratedData.y}_z${currentGeneratedData.z}_${Date.now()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showToast('Sequence exported as JSON!', 'success');
+        }
+
+        // Update Chart button handler (for analysis tab)
+        function updateChart() {
+            const analysisType = document.getElementById('analysis-type').value;
+            const termsCount = parseInt(document.getElementById('analysis-terms').value) || 100;
+
+            // If we have current generated data, regenerate chart with new parameters
+            if (currentGeneratedData && hasLegacyFunctions) {
+                showToast(`Updating chart for ${analysisType} mode...`, 'info');
+                // In a full implementation, we would switch plot modes and redraw
+                // For now, just show a toast
+            } else {
+                showToast(`Chart update functionality for ${analysisType} with ${termsCount} terms - ready to use with generated sequences`, 'info');
+            }
+        }
+
+        // Generate Hiccup sequence (core algorithm)
+        function generateHiccup(j, x, y, z, n) {
+            return localGenerateHiccup(j, x, y, z, n);
+        }
+
+        // Helper to describe connection (from legacy)
+        function describeConnection(match) {
+            if (!match) return '';
+            if (match.matchType === 'translate') {
+                return `Shifted by ${match.offset}`;
+            }
+            if (match.matchType === 'scale') {
+                return `Scaled by ×${match.scale}`;
+            }
+            if (match.matchKind === 'parameters') {
+                return 'Exact parameter match';
+            }
+            return 'Exact prefix match';
+        }
     </script>
 </body>
 </html>

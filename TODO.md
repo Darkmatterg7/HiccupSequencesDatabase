@@ -29,12 +29,21 @@
 - [x] Extract Chart.js configuration if present
 - [x] Extract user profile/switcher functionality
 - [x] Extract submission workflow UI
-- [ ] Extract moderation dashboard UI
+- [x] Extract moderation dashboard UI
+- [x] Implement tab switching functionality (fix unresponsive tab buttons)
 
 ### Phase 4: Implementation & Testing
 - [x] Apply styling changes to index.html in chunks (added missing stepper-btn, input-with-stepper, input-desc CSS)
 - [x] Test visual appearance after each chunk (verified implementation matches legacy for correct appearance)
 - [x] Implement JavaScript features in chunks (added submission-trigger header button and hidden trigger)
+- [ ] Implement missing button handlers:
+    - [x] Tab switching functionality
+    - [x] Generate Sequence button
+    - [x] Copy to Clipboard button
+    - [x] Export as JSON button
+    - [ ] Find Matches button
+    - [ ] Update Chart button
+    - [ ] Match input textarea handler
 - [ ] Test functionality after each implementation
 - [ ] Verify responsive design works
 - [ ] Ensure all existing functionality remains intact
