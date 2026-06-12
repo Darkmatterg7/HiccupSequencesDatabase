@@ -9,44 +9,15 @@
 
 ## TODO Items
 
-### Phase 1: Analysis & Planning
-- [x] Analyze legacy_index.html for CSS/styling features
-- [x] Analyze legacy_index.html for JavaScript functionality
-- [x] Analyze legacy_index.html for UI component structure
-- [x] Identify which features to prioritize for transfer
-
-### Phase 2: Styling & Aesthetics
-- [x] Extract CSS variables/design tokens from legacy
-- [x] Import Google Fonts declarations (EB Garamond, Inter, JetBrains Mono, CMU Typewriter Text)
-- [x] Apply color scheme: --bg: #0b0e14, --accent: #e8a838, etc.
-- [x] Import typography settings
-- [x] Import layout and spacing conventions
-- [x] Import card, button, input styles
-
-### Phase 3: Features & Functionality
-- [x] Identify interactive components (tabs, modals, forms, etc.)
-- [x] Extract JavaScript functionality for sequence generation/matching
-- [x] Extract Chart.js configuration if present
-- [x] Extract user profile/switcher functionality
-- [x] Extract submission workflow UI
-- [x] Extract moderation dashboard UI
-- [x] Implement tab switching functionality (fix unresponsive tab buttons)
-
-### Phase 4: Implementation & Testing
-- [x] Apply styling changes to index.html in chunks (added missing stepper-btn, input-with-stepper, input-desc CSS)
-- [x] Test visual appearance after each chunk (verified implementation matches legacy for correct appearance)
-- [x] Implement JavaScript features in chunks (added submission-trigger header button and hidden trigger)
-- [ ] Implement missing button handlers:
-    - [x] Tab switching functionality
-    - [x] Generate Sequence button
-    - [x] Copy to Clipboard button
-    - [x] Export as JSON button
-    - [x] Find Matches button
-    - [x] Update Chart button
-    - [x] Match input textarea handler
-- [ ] Test functionality after each implementation
-- [ ] Verify responsive design works
-- [ ] Ensure all existing functionality remains intact
+1. [ ] Light/Dark theme toggle – minimal circle half black/half white in header
+2. [ ] Replace plotter tabs with a single “Update Chart” toggle button
+3. [ ] Add export/download options (CSV for sequence, PNG for chart)
+4. [ ] URL state persistence (hash‑based sharing)
+5. [ ] Form reset button
+6. [ ] Keyboard shortcuts (Enter to analyse/generate, ? for help)
+7. [ ] Enhanced reference‑table features (CSV export, random example)
+8. [ ] Accessibility refinements (aria-label, focus outlines)
+9. [ ] Minor UI polish (smooth scroll, subtle spinners, tooltips)
 
 ## Notes
 - Work in small chunks as requested
