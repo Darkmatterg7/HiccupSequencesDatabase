@@ -2614,6 +2614,51 @@ document.getElementById('theme-toggle').addEventListener('click', () => {
   const isLight = body.classList.toggle('light-theme');
   localStorage.setItem('theme', isLight ? 'light' : 'dark');
 });
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+  const focusedElement = document.activeElement;
+
+  // Handle ? key for help (unless typing in input/textarea)
+  if (e.key === '?' || e.key === '/') {
+    if (!(focusedElement instanceof HTMLInputElement ||
+          focusedElement instanceof HTMLTextAreaElement)) {
+      e.preventDefault();
+      openHelpModal();
+    }
+  }
+
+  // Handle Enter key
+  if (e.key === 'Enter') {
+    // Sequence input textarea -> run analysis
+    if (focusedElement === document.getElementById('sequence-input')) {
+      e.preventDefault();
+      const inputVal = focusedElement.value.trim();
+      if (inputVal) {
+        runAnalysis(); // Using runAnalysis to match "Analyse Sequence" button
+      }
+    }
+
+    // Generator form inputs -> run generation
+    const generatorInputs = ['param-j', 'param-x', 'param-y', 'param-z'];
+    if (generatorInputs.includes(focusedElement.id)) {
+      e.preventDefault();
+      // Only generate if inputs are valid (no invalid-border styling)
+      if (!focusedElement.classList.contains('invalid-border')) {
+        runGenerator();
+      }
+    }
+  }
+
+  // Handle Escape key
+  if (e.key === 'Escape') {
+    const helpModal = document.getElementById('help-modal');
+    if (helpModal && helpModal.open) {
+      e.preventDefault();
+      closeHelpModal();
+    }
+  }
+});
   </script>
 </body>
 </html>
