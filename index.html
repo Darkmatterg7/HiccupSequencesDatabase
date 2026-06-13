@@ -1165,6 +1165,9 @@ body.light-theme table#seq-table th {
       <button id="generate-btn" class="btn" onclick="runGenerator()">
         Generate Sequence
       </button>
+      <button id="reset-btn" class="btn" style="margin-left: 10px;" onclick="resetForm()">
+        Reset Form
+      </button>
 
       <!-- Section 2 Results display -->
       <div id="generator-results" class="results-container" style="display: none;"></div>
@@ -1733,6 +1736,33 @@ body.light-theme table#seq-table th {
       });
 
       drawSequenceChart();
+    // Reset form to default values
+    function resetForm() {
+      // Reset generator inputs to defaults
+      document.getElementById('param-j').value = '0';
+      document.getElementById('param-x').value = '1';
+      document.getElementById('param-y').value = '2';
+      document.getElementById('param-z').value = '3';
+      validateParamsLive();
+
+      // Clear analysis input
+      const seqInput = document.getElementById('sequence-input');
+      seqInput.value = '';
+      handleInputTextChange();
+
+      // Hide results
+      document.getElementById('generator-results').style.display = 'none';
+      document.getElementById('analysis-results').style.display = 'none';
+
+      // Reset current generated data
+      currentGeneratedData = null;
+
+      // Optionally reset chart to growth mode (optional)
+      // setPlotMode('growth');
+
+      // Update URL hash
+      updateHashFromState();
+    }
       updateHashFromState();
     }
 

@@ -12,8 +12,8 @@
 1. [x] Light/Dark theme toggle – minimal circle half black/half white in header
 2. [x] Replace plotter tabs with a single “Update Chart” toggle button
 3. [x] Add export/download options (CSV for sequence, PNG for chart)
-4. [ ] URL state persistence (hash‑based sharing)
-5. [ ] Form reset button
+4. [x] URL state persistence (hash‑based sharing)
+5. [x] Form reset button
 6. [ ] Keyboard shortcuts (Enter to analyse/generate, ? for help)
 7. [ ] Enhanced reference‑table features (CSV export, random example)
 8. [ ] Accessibility refinements (aria-label, focus outlines)
