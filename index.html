@@ -2082,6 +2082,11 @@ body.light-theme table#seq-table th {
                 } : null
               }, 'hiccup-analysis-${Date.now()}.json');
             ">Export Analysis (JSON)</button>
+            <button class="btn btn-secondary" onclick="
+              const matchResult = matchDatabase(${j}, ${x}, ${y}, ${z}, [${parsedSeq.join(',')}], seqDatabase);
+              exportAsCSV([${parsedSeq.join(',')}], 'hiccup-analysis-${Date.now()}.csv');
+            ">Export Analysis (CSV)</button>
+            <button class="btn btn-secondary" onclick="exportChartAsPNG('hiccup-chart-${Date.now()}.png')">Export Chart (PNG)</button>
           </div>
         `;
 
@@ -2186,6 +2191,11 @@ body.light-theme table#seq-table th {
                 } : null
               }, 'hiccup-sequence-${Date.now()}.json');
             ">Export Sequence (JSON)</button>
+            <button class="btn btn-secondary" onclick="
+              const matchResult = matchDatabase(${j}, ${x}, ${y}, ${z}, [${seq.join(',')}], seqDatabase);
+              exportAsCSV([${seq.join(',')}], 'hiccup-sequence-${Date.now()}.csv');
+            ">Export Sequence (CSV)</button>
+            <button class="btn btn-secondary" onclick="exportChartAsPNG('hiccup-chart-${Date.now()}.png')">Export Chart (PNG)</button>
           </div>
         `;
 
@@ -2407,6 +2417,61 @@ body.light-theme table#seq-table th {
       }
     }
 
+    // Export sequence as CSV file
+    function exportAsCSV(sequence, filename = 'hiccup-sequence.csv') {
+      if (!sequence || sequence.length === 0) {
+        showToast('No sequence data to export', 'warning');
+        return;
+      }
+
+      try {
+        // Convert sequence array to CSV (comma-separated values)
+        const csvData = sequence.join(',');
+        const blob = new Blob([csvData], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showToast('Exported as ' + filename, 'success');
+      } catch (err) {
+        showToast('Export failed: ' + err.message, 'error');
+      }
+    }
+
+    // Export chart canvas as PNG file
+    function exportChartAsPNG(filename = 'hiccup-chart.png') {
+      const canvas = document.getElementById('sequence-plot');
+      if (!canvas) {
+        showToast('No chart to export', 'warning');
+        return;
+      }
+
+      try {
+        // Get canvas data as PNG blob
+        canvas.toBlob((blob) => {
+          const url = URL.createObjectURL(blob);
+
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+
+          showToast('Exported as ' + filename, 'success');
+        }, 'image/png');
+      } catch (err) {
+        showToast('Export failed: ' + err.message, 'error');
+      }
+    }
+
     // Handle sequence matching from input textarea
     function runMatch() {
       const inputVal = document.getElementById('sequence-input').value;
@@ -2507,6 +2572,11 @@ body.light-theme table#seq-table th {
                 } : null
               }, 'hiccup-match-${Date.now()}.json');
             ">Export Match (JSON)</button>
+            <button class="btn btn-secondary" onclick="
+              const matchResult = matchDatabase(${j}, ${x}, ${y}, ${z}, [${parsedSeq.join(',')}], seqDatabase);
+              exportAsCSV([${parsedSeq.join(',')}], 'hiccup-match-${Date.now()}.csv');
+            ">Export Match (CSV)</button>
+            <button class="btn btn-secondary" onclick="exportChartAsPNG('hiccup-chart-${Date.now()}.png')">Export Chart (PNG)</button>
           `;
           resultsContainer.appendChild(actionButtons);
         }
