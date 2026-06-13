@@ -1730,7 +1730,7 @@ body.light-theme table#seq-table th {
     // Change visualizer mode
     function setPlotMode(mode) {
       currentPlotMode = mode;
-      
+
       // Update tab classes
       const tabs = document.querySelectorAll('.plot-tab');
       tabs.forEach(tab => {
@@ -1742,6 +1742,7 @@ body.light-theme table#seq-table th {
       });
 
       drawSequenceChart();
+      updateHashFromState();
     }
 
     /* --- UI CONTROLLERS --- */
@@ -2093,6 +2094,7 @@ body.light-theme table#seq-table th {
         resultsDiv.innerHTML = finalHtml;
         resultsDiv.style.display = 'block';
         resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        updateHashFromState();
 
       }, 150);
     }
@@ -2204,7 +2206,8 @@ body.light-theme table#seq-table th {
         
         // Immediately draw coordinate plot on DOM layout paint
         drawSequenceChart();
-        
+        updateHashFromState();
+
         resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
       }, 150);
@@ -2579,6 +2582,7 @@ body.light-theme table#seq-table th {
             <button class="btn btn-secondary" onclick="exportChartAsPNG('hiccup-chart-${Date.now()}.png')">Export Chart (PNG)</button>
           `;
           resultsContainer.appendChild(actionButtons);
+          updateHashFromState();
         }
 
       }, 150);
@@ -2659,6 +2663,63 @@ document.addEventListener('keydown', function(e) {
     }
   }
 });
+// URL state persistence (hash-based sharing)
+let updatingFromHash = false;
+
+function updateHashFromState() {
+  if (updatingFromHash) return;
+  const j = document.getElementById('param-j').value;
+  const x = document.getElementById('param-x').value;
+  const y = document.getElementById('param-y').value;
+  const z = document.getElementById('param-z').value;
+  const mode = currentPlotMode;
+  const newHash = `j=${j}&x=${x}&y=${y}&z=${z}&mode=${mode}`;
+  if (location.hash !== `#${newHash}`) {
+    updatingFromHash = true;
+    try {
+      location.hash = newHash;
+    } finally {
+      updatingFromHash = false;
+    }
+  }
+}
+
+function initStateFromHash() {
+  const hash = location.hash.substring(1);
+  if (!hash) return;
+  const params = new URLSearchParams(hash);
+  const j = params.get('j');
+  const x = params.get('x');
+  const y = params.get('y');
+  const z = params.get('z');
+  const mode = params.get('mode');
+  if (j === null || x === null || y === null || z === null || mode === null) return;
+  const jNum = parseInt(j,10), xNum = parseInt(x,10), yNum = parseInt(y,10), zNum = parseInt(z,10);
+  if (isNaN(jNum)||isNaN(xNum)||isNaN(yNum)||isNaN(zNum)) return;
+  if (mode !== 'growth' && mode !== 'residual') return;
+  updatingFromHash = true;
+  try {
+    document.getElementById('param-j').value = j;
+    document.getElementById('param-x').value = x;
+    document.getElementById('param-y').value = y;
+    document.getElementById('param-z').value = z;
+    validateParamsLive();
+    setPlotMode(mode);
+    if (yNum !== zNum) {
+      setTimeout(() => runGenerator(), 100);
+    }
+  } finally {
+    updatingFromHash = false;
+  }
+}
+
+function handleHashChange() {
+  if (!updatingFromHash) initStateFromHash();
+}
+
+window.addEventListener('load', initStateFromHash);
+window.addEventListener('hashchange', handleHashChange);
+
   </script>
 </body>
 </html>
