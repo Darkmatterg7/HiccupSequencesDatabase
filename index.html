@@ -1125,6 +1125,9 @@ body.light-theme table#seq-table th {
       <button id="analyse-btn" class="btn" onclick="runAnalysis()">
         Analyse Sequence
       </button>
+      <button id="match-btn" class="btn" style="margin-left: 10px;" onclick="runMatch()">
+        Find Matches
+      </button>
 
       <!-- Section 1 Results display -->
       <div id="analysis-results" class="results-container" style="display: none;"></div>
@@ -2055,12 +2058,30 @@ body.light-theme table#seq-table th {
             <h4>✓ Sequence Authenticated</h4>
             <p>Passed all mathematical parameters for a <strong>(${j}, ${x}, ${y}, ${z})-hiccup</strong> sequence rule.</p>
           </div>
-          
+
           <h4 class="mb-2" style="font-family:var(--font-sans); color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em;">Difference Pattern Rhythm Strip:</h4>
           ${makeRhythmStripHtml(diffs, y, z)}
-          
+
           <div style="margin-top: 1.5rem;">
             ${buildMatchCardHtml(j, x, y, z, parsedSeq, matchResult)}
+          </div>
+
+          <div style="margin-top: 1.5rem; display: flex; gap: 10px; flex-wrap: wrap;" class="action-buttons">
+            <button class="btn btn-secondary" onclick="copyToClipboard([${parsedSeq.join(',')}])">Copy Sequence</button>
+            <button class="btn btn-secondary" onclick="
+              const matchResult = matchDatabase(${j}, ${x}, ${y}, ${z}, [${parsedSeq.join(',')}], seqDatabase);
+              exportAsJSON({
+                sequence: [${parsedSeq.join(',')}],
+                parameters: {j: ${j}, x: ${x}, y: ${y}, z: ${z}},
+                match: matchResult ? {
+                  oeis: matchResult.entry.oeis,
+                  name: matchResult.entry.name,
+                  matchType: matchResult.matchType,
+                  offset: matchResult.offset,
+                  scale: matchResult.scale
+                } : null
+              }, 'hiccup-analysis-${Date.now()}.json');
+            ">Export Analysis (JSON)</button>
           </div>
         `;
 
@@ -2133,10 +2154,9 @@ body.light-theme table#seq-table th {
               <h4 style="font-family:var(--font-sans); color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em; margin:0;">
                 Mathematical Analysis Chart
               </h4>
-              <div class="plotter-tabs">
-                <button class="plot-tab ${isGrowthActive}" onclick="setPlotMode('growth')">Growth Trend</button>
-                <button class="plot-tab ${isResidualActive}" onclick="setPlotMode('residual')">Sturmian Residuals</button>
-              </div>
+              <button class="btn btn-secondary" onclick="updateChart()" style="width: 100%;">
+                Update Chart
+              </button>
             </div>
             
             <div class="plotter-canvas-wrapper">
@@ -2148,6 +2168,24 @@ body.light-theme table#seq-table th {
 
           <div style="margin-top: 2rem;">
             ${buildMatchCardHtml(j, x, y, z, seq, matchResult)}
+          </div>
+
+          <div style="margin-top: 1.5rem; display: flex; gap: 10px; flex-wrap: wrap;" class="action-buttons">
+            <button class="btn btn-secondary" onclick="copyToClipboard([${seq.join(',')}])">Copy Sequence</button>
+            <button class="btn btn-secondary" onclick="
+              const matchResult = matchDatabase(${j}, ${x}, ${y}, ${z}, [${seq.join(',')}], seqDatabase);
+              exportAsJSON({
+                sequence: [${seq.join(',')}],
+                parameters: {j: ${j}, x: ${x}, y: ${y}, z: ${z}},
+                match: matchResult ? {
+                  oeis: matchResult.entry.oeis,
+                  name: matchResult.entry.name,
+                  matchType: matchResult.matchType,
+                  offset: matchResult.offset,
+                  scale: matchResult.scale
+                } : null
+              }, 'hiccup-sequence-${Date.now()}.json');
+            ">Export Sequence (JSON)</button>
           </div>
         `;
 
@@ -2264,6 +2302,229 @@ body.light-theme table#seq-table th {
 
       renderReferenceTable(filtered);
     }
+
+    // ===== MISSING BUTTON HANDLER FUNCTIONS =====
+
+    // Show toast notification
+    function showToast(message, type = 'info') {
+      // Remove any existing toasts
+      const existingToasts = document.querySelectorAll('.toast');
+      existingToasts.forEach(toast => toast.remove());
+
+      // Create toast element
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `
+        <div class="toast-content">${message}</div>
+      `;
+
+      // Add styles if not already added
+      if (!document.querySelector('.toast-styles')) {
+        const style = document.createElement('style');
+        style.className = 'toast-styles';
+        style.textContent = `
+          .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            min-width: 250px;
+            padding: 16px 20px;
+            border-radius: 8px;
+            color: white;
+            font-family: var(--font-sans);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: toastSlideIn 0.3s ease-out, toastFadeOut 0.3s ease-in 2.7s forwards;
+          }
+          .toast-success { background: var(--success); }
+          .toast-error { background: var(--danger); }
+          .toast-warning { background: #f59e0b; }
+          .toast-info { background: #3b82f6; }
+          .toast-content {
+            flex: 1;
+          }
+          @keyframes toastSlideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+          }
+          @keyframes toastFadeOut {
+            to { opacity: 0; pointer-events: none; }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+
+      // Add to body and remove after animation
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.remove();
+      }, 3000);
+    }
+
+    // Copy text to clipboard
+    function copyToClipboard(text) {
+      if (!text || text.trim() === '') {
+        showToast('Nothing to copy', 'warning');
+        return false;
+      }
+
+      navigator.clipboard.writeText(text.trim()).then(() => {
+        showToast('Copied to clipboard!', 'success');
+        return true;
+      }).catch(err => {
+        showToast('Failed to copy: ' + err.message, 'error');
+        return false;
+      });
+    }
+
+    // Export data as JSON file
+    function exportAsJSON(data, filename = 'hiccup-sequence.json') {
+      if (!data) {
+        showToast('No data to export', 'warning');
+        return;
+      }
+
+      try {
+        const jsonData = JSON.stringify(data, null, 2);
+        const blob = new Blob([jsonData], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showToast('Exported as ' + filename, 'success');
+      } catch (err) {
+        showToast('Export failed: ' + err.message, 'error');
+      }
+    }
+
+    // Handle sequence matching from input textarea
+    function runMatch() {
+      const inputVal = document.getElementById('sequence-input').value;
+      const parsedSeq = parseInputSequence(inputVal);
+      const resultsDiv = document.getElementById('analysis-results');
+
+      if (parsedSeq.length === 0) {
+        resultsDiv.innerHTML = `
+          <div class="alert-panel danger">
+            <h4>✗ Invalid Input</h4>
+            <p>Please enter comma-separated or space-separated integers in the textarea above.</p>
+          </div>
+        `;
+        resultsDiv.style.display = 'block';
+        return;
+      }
+
+      // Add a tiny visual processing delay (quality feeling)
+      const btn = document.getElementById('match-btn');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = `<span class="spinner"></span> Matching...`;
+      btn.disabled = true;
+
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+
+        const validation = validateHiccup(parsedSeq);
+
+        if (!validation.valid) {
+          let extraTips = "";
+          if (validation.diffs && validation.diffs.length > 0) {
+            const uniqueGaps = [...new Set(validation.diffs)].sort((a,b)=>a-b);
+            extraTips = `
+              <div class="tip mt-4">
+                <strong>First Difference Gaps Analysis:</strong><br>
+                Sequence Differences: [${validation.diffs.slice(0, 15).join(', ')}${validation.diffs.length > 15 ? '...' : ''}]<br>
+                Found ${uniqueGaps.length} distinct gaps: [${uniqueGaps.join(', ')}]
+              </div>
+            `;
+          }
+
+          resultsDiv.innerHTML = `
+            <div class="alert-panel danger">
+              <h4>✗ Not a Hiccup Sequence</h4>
+              <p>${validation.reason}</p>
+              ${extraTips}
+            </div>
+          `;
+          resultsDiv.style.display = 'block';
+          resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          return;
+        }
+
+        // It is a valid sequence!
+        const { j, x, y, z, diffs } = validation;
+
+        // Match against database
+        const matchResult = matchDatabase(j, x, y, z, parsedSeq, seqDatabase);
+
+        let finalHtml = `
+          <div class="alert-panel success" style="margin-bottom: 1.5rem;">
+            <h4>✓ Sequence Authenticated</h4>
+            <p>Passed all mathematical parameters for a <strong>(${j}, ${x}, ${y}, ${z})-hiccup</strong> sequence rule.</p>
+          </div>
+
+          <h4 class="mb-2" style="font-family:var(--font-sans); color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em;">Difference Pattern Rhythm Strip:</h4>
+          ${makeRhythmStripHtml(diffs, y, z)}
+
+          <div style="margin-top: 1.5rem;">
+            ${buildMatchCardHtml(j, x, y, z, parsedSeq, matchResult)}
+          </div>
+        `;
+
+        resultsDiv.innerHTML = finalHtml;
+        resultsDiv.style.display = 'block';
+        resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+        // Add copy/export buttons to results
+        const resultsContainer = document.getElementById('analysis-results');
+        if (resultsContainer && !resultsContainer.querySelector('.action-buttons')) {
+          const actionButtons = document.createElement('div');
+          actionButtons.className = 'action-buttons';
+          actionButtons.style = 'margin-top: 1.5rem; display: flex; gap: 10px; flex-wrap: wrap;';
+          actionButtons.innerHTML = `
+            <button class="btn btn-secondary" onclick="copyToClipboard([${parsedSeq.join(',')}])">Copy Sequence</button>
+            <button class="btn btn-secondary" onclick="
+              const matchResult = matchDatabase(${j}, ${x}, ${y}, ${z}, [${parsedSeq.join(',')}], seqDatabase);
+              exportAsJSON({
+                sequence: [${parsedSeq.join(',')}],
+                parameters: {j: ${j}, x: ${x}, y: ${y}, z: ${z}},
+                match: matchResult ? {
+                  oeis: matchResult.entry.oeis,
+                  name: matchResult.entry.name,
+                  matchType: matchResult.matchType,
+                  offset: matchResult.offset,
+                  scale: matchResult.scale
+                } : null
+              }, 'hiccup-match-${Date.now()}.json');
+            ">Export Match (JSON)</button>
+          `;
+          resultsContainer.appendChild(actionButtons);
+        }
+
+      }, 150);
+    }
+
+    // Update/refresh the current analysis chart
+    function updateChart() {
+      if (currentGeneratedData && currentGeneratedData.seq) {
+        // Redraw the sequence chart with current data
+        drawSequenceChart();
+        showToast('Chart updated!', 'success');
+      } else {
+        showToast('No sequence data to chart. Generate or analyze a sequence first.', 'warning');
+      }
+    }
+
     // Theme toggle functionality
 const body = document.body;
 
