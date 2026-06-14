@@ -1198,6 +1198,10 @@ body.light-theme table#seq-table th {
                 </select>
               </div>
             </div>
+            <div class="ref-button-group">
+              <button class="btn btn-secondary" onclick="exportReferenceTableAsCSV()">Export CSV</button>
+              <button class="btn btn-secondary" onclick="loadRandomReferenceExample()">Random Example</button>
+            </div>
           </div>
 
           <div class="table-container">
@@ -2264,6 +2268,9 @@ body.light-theme table#seq-table th {
     }
 
     // Renders table rows in table element
+
+    // Store last filtered table data for export
+    let lastFilteredTableData = [];
     function renderReferenceTable(dbList) {
       const tbody = document.getElementById('table-body');
       tbody.innerHTML = "";
@@ -2334,7 +2341,7 @@ body.light-theme table#seq-table th {
         return true;
       });
 
-      renderReferenceTable(filtered);
+            // Store filtered data for export\n      lastFilteredTableData = filtered;\n      renderReferenceTable(filtered);
     }
 
     // ===== MISSING BUTTON HANDLER FUNCTIONS =====
@@ -2740,6 +2747,80 @@ function handleHashChange() {
 
 window.addEventListener('load', initStateFromHash);
 window.addEventListener('hashchange', handleHashChange);
+
+// Export reference table as CSV file
+function exportReferenceTableAsCSV() {
+  let dataToExport = lastFilteredTableData && lastFilteredTableData.length > 0 ? lastFilteredTableData : seqDatabase;
+  if (!dataToExport || dataToExport.length === 0) {
+    showToast('No data to export', 'warning');
+    return;
+  }
+
+  try {
+    // CSV header
+    const headers = ['OEIS', 'j', 'x', 'y', 'z', 'Name', 'Note', 'Formula', 'Beatty'];
+    const rows = [headers];
+
+    // Helper to escape CSV fields
+    const escapeCSV = (field) => {
+      if (field == null || field === '') return '';
+      const str = String(field);
+      if (str.includes('"') || str.includes(',') || str.includes('\n') || str.includes('\r')) {
+        return '"' + str.replace(/"/g, '""') + '"';
+      }
+      return str;
+    };
+
+    // Build rows
+    dataToExport.forEach(entry => {
+      const row = [
+        entry.oeis,
+        entry.j,
+        entry.x,
+        entry.y,
+        entry.z,
+        entry.name || '',
+        entry.note || '',
+        entry.formula || '',
+        entry.beatty ? 'true' : 'false'
+      ].map(escapeCSV);
+      rows.push(row.join(','));
+    });
+
+    const csvContent = rows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'hiccup-reference-table.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showToast('Exported reference table as CSV', 'success');
+  } catch (err) {
+    showToast('Export failed: ' + err.message, 'error');
+  }
+}
+
+// Load a random reference example into the generator
+function loadRandomReferenceExample() {
+  let source = lastFilteredTableData && lastFilteredTableData.length > 0 ? lastFilteredTableData : seqDatabase;
+  if (!source || source.length === 0) {
+    showToast('No sequences available', 'warning');
+    return;
+  }
+
+  const randomIndex = Math.floor(Math.random() * source.length);
+  const entry = source[randomIndex];
+
+  // Auto-fill the generator with the random entry's parameters
+  autofillGenerator(entry.j, entry.x, entry.y, entry.z);
+
+  showToast(`Loaded random example: ${entry.oeis} - ${entry.name}`, 'success');
+}
 
   </script>
 </body>
