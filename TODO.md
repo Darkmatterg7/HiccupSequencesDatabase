@@ -14,7 +14,7 @@
 3. [x] Add export/download options (CSV for sequence, PNG for chart)
 4. [x] URL state persistence (hash‑based sharing)
 5. [x] Form reset button
-6. [ ] Keyboard shortcuts (Enter to analyse/generate, ? for help)
+6. [x] Keyboard shortcuts (Enter to analyse/generate, ? for help)
 7. [ ] Enhanced reference‑table features (CSV export, random example)
 8. [ ] Accessibility refinements (aria-label, focus outlines)
 9. [ ] Minor UI polish (smooth scroll, subtle spinners, tooltips)
