@@ -1261,7 +1261,7 @@ body.light-theme table#seq-table th {
       </h2>
       <button class="toggle-trigger-btn" id="table-toggle-btn" onclick="toggleReferenceTable()" aria-label="Toggle reference table visibility" aria-expanded="false">
         <span>Browse all known hiccup sequences (Tables 1 & 3)</span>
-        <span class="icon">▼</span>
+        <span class="icon">🔍</span>
       </button>
       
       <div id="table-collapsible" class="collapsible-content">
@@ -1818,13 +1818,15 @@ body.light-theme table#seq-table th {
       // Hide the stats panel (text below graph) as we show slope on top
       const statsPanel = document.getElementById('plotter-stats');
       if (statsPanel) statsPanel.style.display = 'none';
-      // Display slope value on top of plot
-      ctx.fillStyle = 'rgba(232, 168, 56, 0.9)';
-      ctx.font = '14px "JetBrains Mono", monospace';
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'top';
-      const slopeText = `Slope (m) ≈ ${regression.slope.toFixed(4)}`;
-      ctx.fillText(slopeText, margin.left + 5, margin.top + 5);
+      // Display slope value on top of plot (only in growth mode)
+      if (currentPlotMode === 'growth') {
+        ctx.fillStyle = 'rgba(232, 168, 56, 0.9)';
+        ctx.font = '14px "JetBrains Mono", monospace';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        const slopeText = `Slope (m) ≈ ${regression.slope.toFixed(4)}`;
+        ctx.fillText(slopeText, margin.left + 5, margin.top + 5);
+      }
     }
 
     // Change visualizer mode
@@ -2308,10 +2310,10 @@ body.light-theme table#seq-table th {
           <div class="plotter-card">
             <div class="plotter-header">
               <h4 style="font-family:var(--font-sans); color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em; margin:0;">
-                Mathematical Analysis Chart
+                Asymptotic analysis
               </h4>
-              <button class="btn btn-secondary" onclick="updateChart()" style="width: 100%;">
-                Refresh Chart
+              <button class="btn btn-secondary" onclick="updateChart()" style="width: 24px; height: 24px; padding: 0; min-width: 24px;">
+                ⟳
               </button>
             </div>
 
