@@ -264,6 +264,56 @@
       border-color: var(--danger) !important;
     }
 
+    /* Number input spinner styles for webkit */
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      display: block;
+      width: 1.2rem;
+      height: 100%;
+      cursor: pointer;
+      background-color: rgba(255, 255, 255, 0.02);
+      border-left: 1px solid var(--border-color);
+    }
+
+    input[type="number"]::-webkit-outer-spin-button:hover,
+    input[type="number"]::-webkit-inner-spin-button:hover {
+      background-color: rgba(255, 255, 255, 0.04);
+    }
+
+    input[type="number"]::-webkit-outer-spin-button:active,
+    input[type="number"]::-webkit-inner-spin-button:active {
+      background-color: rgba(255, 255, 255, 0.06);
+    }
+
+    /* Up arrow for outer-spin-button */
+    input[type="number"]::-webkit-outer-spin-button::before {
+      content: "";
+      position: absolute;
+      top: 35%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 0 3px 4px 3px;
+      border-color: transparent transparent var(--text) transparent;
+      transform: translateX(-50%);
+    }
+
+    /* Down arrow for inner-spin-button */
+    input[type="number"]::-webkit-inner-spin-button::before {
+      content: "";
+      position: absolute;
+      bottom: 35%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 4px 3px 0 3px;
+      border-color: var(--text) transparent transparent transparent;
+      transform: translateX(-50%);
+    }
+
     /* Buttons */
     .btn {
       background: var(--accent-muted);
