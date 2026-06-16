@@ -16,8 +16,8 @@
 5. [x] Form reset button
 6. [x] Keyboard shortcuts (Enter to analyse/generate, ? for help)
 7. [x] Enhanced reference‑table features (CSV export, random example)
-8. [ ] Accessibility refinements (aria-label, focus outlines)
-9. [ ] Minor UI polish (smooth scroll, subtle spinners, tooltips)
+8. [x] Accessibility refinements (aria-label, focus outlines)
+9. [x] Minor UI polish (smooth scroll, subtle spinners, tooltips)
 10. [ ] Mobile-friendly implementation for all features
 
 ## Notes
