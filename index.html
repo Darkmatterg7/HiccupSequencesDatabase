@@ -1565,7 +1565,12 @@ body.light-theme table#seq-table th {
       const plotHeight = height - margin.top - margin.bottom;
 
       // Math calculations
-      const regression = fitLinearRegression(seq);
+      let regression;
+      if (currentGeneratedData.longRegression) {
+        regression = currentGeneratedData.longRegression;
+      } else {
+        regression = fitLinearRegression(seq);
+      }
       
       // Determine what to plot based on currentPlotMode
       let yData = [];
@@ -1780,6 +1785,7 @@ body.light-theme table#seq-table th {
         ctx.fill();
       }
 
+/*
       // Render stats overlay
       const statsPanel = document.getElementById('plotter-stats');
       if (statsPanel) {
@@ -1788,7 +1794,7 @@ body.light-theme table#seq-table th {
           <span class="stat-item">Y-Intercept (c): <strong>${regression.intercept.toFixed(2)}</strong></span>
           <span class="stat-item">Correlation (R²): <strong>${regression.r2.toFixed(4)}</strong></span>
         `;
-        
+
         if (currentPlotMode === 'residual') {
           let baselineSource = "Linear Regression Fit";
           if (entry && entry.slope) {
@@ -1807,6 +1813,17 @@ body.light-theme table#seq-table th {
         }
         statsPanel.innerHTML = statsHtml;
       }
+*/
+      // Hide the stats panel (text below graph) as we show slope on top
+      const statsPanel = document.getElementById('plotter-stats');
+      if (statsPanel) statsPanel.style.display = 'none';
+      // Display slope value on top of plot
+      ctx.fillStyle = 'rgba(232, 168, 56, 0.9)';
+      ctx.font = '14px "JetBrains Mono", monospace';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'top';
+      const slopeText = `Slope (m) ≈ ${regression.slope.toFixed(4)}`;
+      ctx.fillText(slopeText, margin.left + 5, margin.top + 5);
     }
 
     // Change visualizer mode
@@ -2240,17 +2257,28 @@ body.light-theme table#seq-table th {
         btn.innerHTML = originalText;
         btn.disabled = false;
 
-        const { seq, steps } = generateHiccup(j, x, y, z, 50);
+        // Generate long sequence for slope estimation (not shown to user)
+        const { seq: longSeq, steps: longSteps } = generateHiccup(j, x, y, z, 1000);
+        const longRegression = fitLinearRegression(longSeq);
+
+        // Generate short sequence for UI display and matching
+        const { seq: shortSeq, steps: shortSteps } = generateHiccup(j, x, y, z, 50);
         const diffs = [];
-        for (let i = 1; i < seq.length; i++) {
-          diffs.push(seq[i] - seq[i-1]);
+        for (let i = 1; i < shortSeq.length; i++) {
+          diffs.push(shortSeq[i] - shortSeq[i-1]);
         }
 
-        // Match against database
-        const matchResult = matchDatabase(j, x, y, z, seq, seqDatabase);
-        
-        // Cache generated data for the plotter
-        currentGeneratedData = { seq, steps, entry: matchResult, j, x, y, z };
+        // Match against database using the short sequence (pattern is same)
+        const matchResult = matchDatabase(j, x, y, z, shortSeq, seqDatabase);
+
+        // Cache generated data for the plotter and UI
+        currentGeneratedData = {
+          seq: shortSeq,
+          steps: shortSteps,
+          entry: matchResult,
+          j, x, y, z,
+          longRegression  // for slope estimation
+        };
 
         let lemmaNoteHtml = "";
         if (j > 0) {
