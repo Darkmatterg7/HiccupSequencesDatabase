@@ -8,6 +8,12 @@
     "playwright@claude-plugins-official": true,
     "claude-md-management@claude-plugins-official": true,
     "codex@openai-codex": true,
-    "security-guidance@claude-plugins-official": true
+    "security-guidance@claude-plugins-official": true,
+    "imessage@claude-plugins-official": true
+  },
+  "permissions": {
+    "allow": [
+      "mcp__chrome-devtools__type_text"
+    ]
   }
 }

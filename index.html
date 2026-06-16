@@ -1599,6 +1599,7 @@ body.light-theme table#seq-table th {
           }
         }
 
+        // Determine bounds for residual plot
         if (entry && entry.bounds) {
           boundsLines = entry.bounds; // e.g. [-1, 4]
         }
@@ -1851,6 +1852,7 @@ body.light-theme table#seq-table th {
       }
 
       drawSequenceChart();
+    }
     // Reset form to default values
     function resetForm() {
       // Reset generator inputs to defaults
@@ -1876,8 +1878,6 @@ body.light-theme table#seq-table th {
       // setPlotMode('growth');
 
       // Update URL hash
-      updateHashFromState();
-    }
       updateHashFromState();
     }
 
@@ -2254,8 +2254,10 @@ body.light-theme table#seq-table th {
       btn.disabled = true;
 
       setTimeout(() => {
+        console.error('setTimeout callback started');
         btn.innerHTML = originalText;
         btn.disabled = false;
+        console.log('setTimeout callback started');
 
         // Generate long sequence for slope estimation (not shown to user)
         const { seq: longSeq, steps: longSteps } = generateHiccup(j, x, y, z, 1000);
