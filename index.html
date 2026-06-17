@@ -1897,7 +1897,7 @@ body.light-theme table#seq-table th {
     function openSubmissionModal(j, x, y, z, seqString) {
       document.getElementById('submitted-params').value = `(${j}, ${x}, ${y}, ${z})`;
       document.getElementById('submitted-seq').value = seqString;
-      document.getElementById('submitted-notes').value = '';
+      document.getElementById('submitted-comments').value = '';
       document.getElementById('submission-modal').showModal();
     }
 
@@ -1909,19 +1909,38 @@ body.light-theme table#seq-table th {
       const [_, jj, xx, yy, zz] = document.getElementById('submitted-params').value.match(/\((\d+), (\d+), (\d+), (\d+)\)/);
       const seqString = document.getElementById('submitted-seq').value;
       const seq = seqString.split(',').map(s => s.trim()).filter(Boolean);
-      const notes = document.getElementById('submitted-notes').value.trim();
+      const notes = document.getElementById('submitted-comments').value.trim();
+      // new fields
+      const oeisId = document.getElementById('submitted-oeis').value.trim();
+      const name = document.getElementById('submitted-name').value.trim();
+      const formula = document.getElementById('submitted-formula').value.trim();
+      const slope = document.getElementById('submitted-slope').value.trim();
+      const description = document.getElementById('submitted-description').value.trim();
+      const morphism = document.getElementById('submitted-morphism').value.trim();
+      const boundLow = document.getElementById('submitted-bound-low').value.trim();
+      const boundHigh = document.getElementById('submitted-bound-high').value.trim();
 
       const issueTitle = `New hiccup sequence submission (j=${jj}, x=${xx}, y=${yy}, z=${zz})`;
-      const issueBody = [
+      const issueBodyLines = [
         '**New hiccup sequence submission**',
         '',
         `- Parameters: (${jj}, ${xx}, ${yy}, ${zz})`,
         `- Sequence: ${seq.join(', ')}`,
+        oeisId ? `- OEIS ID: ${oeisId}` : '',
+        name ? `- Name / properties: ${name}` : '',
+        formula ? `- Closed‑form formula: ${formula}` : '',
+        slope ? `- Slope: ${slope}` : '',
+        description ? `- Description: ${description}` : '',
+        morphism ? `- Generating morphism: ${morphism}` : '',
+        boundLow !== '' ? `- Bounds low: ${boundLow}` : '',
+        boundHigh !== '' ? `- Bounds high: ${boundHigh}` : '',
         notes ? `- Notes: ${notes}` : '',
         '',
         '---',
         '*Submitted via the Hiccup Sequence Explorer UI.*'
-      ].filter(line => line !== '').join('\n\n');
+      ];
+      // filter out empty lines
+      const issueBody = issueBodyLines.filter(line => line !== '').join('\n\n');
 
       const encodedBody = encodeURIComponent(issueBody);
       const issueUrl = `https://github.com/Darkmatterg7/HiccupSequencesDatabase/issues/new?title=${encodeURIComponent(issueTitle)}&body=${encodedBody}`;
@@ -2246,7 +2265,7 @@ body.light-theme table#seq-table th {
           </div>
 
           <div style="margin-top: 1.5rem; display: flex; gap: 10px; flex-wrap: wrap;" class="action-buttons">
-            <button class="btn btn-secondary" onclick="copyToClipboard([${parsedSeq.join(',')}])">Copy Sequence</button>
+            <button class="btn btn-secondary" onclick="copyToClipboard([${parsedSeq.join(',')}])" aria-label="Copy sequence">📋</button>
             <button class="btn btn-secondary" onclick="
               const matchResult = matchDatabase(${j}, ${x}, ${y}, ${z}, [${parsedSeq.join(',')}], seqDatabase);
               exportAsJSON({
@@ -2260,12 +2279,12 @@ body.light-theme table#seq-table th {
                   scale: matchResult.scale
                 } : null
               }, 'hiccup-analysis-${Date.now()}.json');
-            ">Export Analysis (JSON)</button>
+            " aria-label="Export analysis as JSON">💾</button>
             <button class="btn btn-secondary" onclick="
               const matchResult = matchDatabase(${j}, ${x}, ${y}, ${z}, [${parsedSeq.join(',')}], seqDatabase);
               exportAsCSV([${parsedSeq.join(',')}], 'hiccup-analysis-${Date.now()}.csv');
-            ">Export Analysis (CSV)</button>
-            <button class="btn btn-secondary" onclick="exportChartAsPNG('hiccup-chart-${Date.now()}.png')">Export Chart (PNG)</button>
+            " aria-label="Export analysis as CSV">📊</button>
+            <button class="btn btn-secondary" onclick="exportChartAsPNG('hiccup-chart-${Date.now()}.png')" aria-label="Export chart as PNG">📈</button>
           </div>
         `;
 
@@ -2371,7 +2390,7 @@ body.light-theme table#seq-table th {
           </div>
 
           <div style="margin-top: 1.5rem; display: flex; gap: 10px; flex-wrap: wrap;" class="action-buttons">
-            <button class="btn btn-secondary" onclick="copyToClipboard([${seq.join(',')}])">Copy Sequence</button>
+            <button class="btn btn-secondary" onclick="copyToClipboard([${seq.join(',')}])" aria-label="Copy sequence">📋</button>
             <button class="btn btn-secondary" onclick="
               const matchResult = matchDatabase(${j}, ${x}, ${y}, ${z}, [${seq.join(',')}], seqDatabase);
               exportAsJSON({
@@ -2385,12 +2404,12 @@ body.light-theme table#seq-table th {
                   scale: matchResult.scale
                 } : null
               }, 'hiccup-sequence-${Date.now()}.json');
-            ">Export Sequence (JSON)</button>
+            " aria-label="Export sequence as JSON">💾</button>
             <button class="btn btn-secondary" onclick="
               const matchResult = matchDatabase(${j}, ${x}, ${y}, ${z}, [${seq.join(',')}], seqDatabase);
               exportAsCSV([${seq.join(',')}], 'hiccup-sequence-${Date.now()}.csv');
-            ">Export Sequence (CSV)</button>
-            <button class="btn btn-secondary" onclick="exportChartAsPNG('hiccup-chart-${Date.now()}.png')">Export Chart (PNG)</button>
+            " aria-label="Export sequence as CSV">📊</button>
+            <button class="btn btn-secondary" onclick="exportChartAsPNG('hiccup-chart-${Date.now()}.png')" aria-label="Export chart as PNG">📈</button>
           </div>
         `;
 
@@ -2756,7 +2775,7 @@ body.light-theme table#seq-table th {
           actionButtons.className = 'action-buttons';
           actionButtons.style = 'margin-top: 1.5rem; display: flex; gap: 10px; flex-wrap: wrap;';
           actionButtons.innerHTML = `
-            <button class="btn btn-secondary" onclick="copyToClipboard([${parsedSeq.join(',')}])">Copy Sequence</button>
+            <button class="btn btn-secondary" onclick="copyToClipboard([${parsedSeq.join(',')}])" aria-label="Copy sequence">📋</button>
             <button class="btn btn-secondary" onclick="
               const matchResult = matchDatabase(${j}, ${x}, ${y}, ${z}, [${parsedSeq.join(',')}], seqDatabase);
               exportAsJSON({
@@ -2770,12 +2789,12 @@ body.light-theme table#seq-table th {
                   scale: matchResult.scale
                 } : null
               }, 'hiccup-match-${Date.now()}.json');
-            ">Export Match (JSON)</button>
+            " aria-label="Export match as JSON">💾</button>
             <button class="btn btn-secondary" onclick="
               const matchResult = matchDatabase(${j}, ${x}, ${y}, ${z}, [${parsedSeq.join(',')}], seqDatabase);
               exportAsCSV([${parsedSeq.join(',')}], 'hiccup-match-${Date.now()}.csv');
-            ">Export Match (CSV)</button>
-            <button class="btn btn-secondary" onclick="exportChartAsPNG('hiccup-chart-${Date.now()}.png')">Export Chart (PNG)</button>
+            " aria-label="Export match as CSV">📊</button>
+            <button class="btn btn-secondary" onclick="exportChartAsPNG('hiccup-chart-${Date.now()}.png')" aria-label="Export chart as PNG">📈</button>
           `;
           resultsContainer.appendChild(actionButtons);
           updateHashFromState();
@@ -2858,7 +2877,7 @@ body.light-theme table#seq-table th {
           </div>
 
           <div style="margin-top: 1.5rem; display: flex; gap: 10px; flex-wrap: wrap;" class="action-buttons">
-            <button class="btn btn-secondary" onclick="copyToClipboard([${parsedSeq.join(',')}])">Copy Sequence</button>
+            <button class="btn btn-secondary" onclick="copyToClipboard([${parsedSeq.join(',')}])" aria-label="Copy sequence">📋</button>
             <button class="btn btn-secondary" onclick="
               const matchResult = matchDatabase(${j}, ${x}, ${y}, ${z}, [${parsedSeq.join(',')}], seqDatabase);
               exportAsJSON({
@@ -2872,11 +2891,11 @@ body.light-theme table#seq-table th {
                   scale: matchResult.scale
                 } : null
               }, 'hiccup-analysis-${Date.now()}.json');
-            ">Export Analysis (JSON)</button>
+            " aria-label="Export analysis as JSON">💾</button>
             <button class="btn btn-secondary" onclick="
               const matchResult = matchDatabase(${j}, ${x}, ${y}, ${z}, [${parsedSeq.join(',')}], seqDatabase);
               exportAsCSV([${parsedSeq.join(',')}], 'hiccup-analysis-${Date.now()}.csv');
-            ">Export Analysis (CSV)</button>
+            " aria-label="Export analysis as CSV">📊</button>
             <button class="btn btn-secondary" onclick="
               const matchResult = matchDatabase(${j}, ${x}, ${y}, ${z}, [${parsedSeq.join(',')}], seqDatabase);
               exportAsJSON({
@@ -2890,12 +2909,12 @@ body.light-theme table#seq-table th {
                   scale: matchResult.scale
                 } : null
               }, 'hiccup-match-${Date.now()}.json');
-            ">Export Match (JSON)</button>
+            " aria-label="Export match as JSON">💾</button>
             <button class="btn btn-secondary" onclick="
               const matchResult = matchDatabase(${j}, ${x}, ${y}, ${z}, [${parsedSeq.join(',')}], seqDatabase);
               exportAsCSV([${parsedSeq.join(',')}], 'hiccup-match-${Date.now()}.csv');
-            ">Export Match (CSV)</button>
-            <button class="btn btn-secondary" onclick="exportChartAsPNG('hiccup-chart-${Date.now()}.png')">Export Chart (PNG)</button>
+            " aria-label="Export match as CSV">📊</button>
+            <button class="btn btn-secondary" onclick="exportChartAsPNG('hiccup-chart-${Date.now()}.png')" aria-label="Export chart as PNG">📈</button>
           </div>
         `;
 
@@ -3132,10 +3151,42 @@ function loadRandomReferenceExample() {
       <textarea id="submitted-seq" rows="3" readonly></textarea>
     </div>
 
-    <!-- Optional free-form notes -->
+    <!-- Optional fields matching JSON entry units -->
     <div class="form-group">
-      <label for="submitted-notes" class="input-label">Notes (optional)</label>
-      <textarea id="submitted-notes" rows="4" placeholder="e.g., where you found it, any conjectures, etc."></textarea>
+      <label for="submitted-oeis" class="input-label">OEIS ID (optional)</label>
+      <input type="text" id="submitted-oeis" placeholder="e.g., A123456">
+    </div>
+    <div class="form-group">
+      <label for="submitted-name" class="input-label">Name / properties (optional)</label>
+      <input type="text" id="submitted-name" placeholder="e.g., My sequence">
+    </div>
+    <div class="form-group">
+      <label for="submitted-formula" class="input-label">Closed‑form formula (optional)</label>
+      <input type="text" id="submitted-formula" placeholder="e.g., ⌊n·√2⌋">
+    </div>
+    <div class="form-group">
+      <label for="submitted-slope" class="input-label">Slope (optional)</label>
+      <input type="number" id="submitted-slope" step="any" placeholder="e.g., 1.414">
+    </div>
+    <div class="form-group">
+      <label for="submitted-description" class="input-label">Description (optional)</label>
+      <textarea id="submitted-description" rows="2" placeholder="Brief description"></textarea>
+    </div>
+    <div class="form-group">
+      <label for="submitted-morphism" class="input-label">Generating morphism (optional)</label>
+      <input type="text" id="submitted-morphism" placeholder="e.g., 0 → 01, 1 → 10">
+    </div>
+    <div class="form-group">
+      <label for="submitted-bound-low" class="input-label">Bounds low (optional)</label>
+      <input type="number" id="submitted-bound-low" step="any" placeholder="e.g., -1">
+    </div>
+    <div class="form-group">
+      <label for="submitted-bound-high" class="input-label">Bounds high (optional)</label>
+      <input type="number" id="submitted-bound-high" step="any" placeholder="e.g., 4">
+    </div>
+    <div class="form-group">
+      <label for="submitted-comments" class="input-label">Comments (optional)</label>
+      <textarea id="submitted-comments" rows="3" placeholder="Any additional comments"></textarea>
     </div>
 
     <!-- Action buttons -->

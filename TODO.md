@@ -3,7 +3,7 @@
 ## Tasks to Complete
 
 ### UI/Visual Modifications
-- [ ] **Replace action buttons with symbols** - Convert Copy Sequence, Export Sequence (JSON/CSV), Export Chart (PNG) to symbolic buttons (theme toggle size) - **PENDING SYMBOL APPROVAL**
+- [x] **Replace action buttons with symbols** - Convert Copy Sequence, Export Sequence (JSON/CSV), Export Chart (PNG) to symbolic buttons (theme toggle size)
 - [x] **Add “Provide connection?” button for unmatched sequences** – Replace the “✓ Valid Hiccup Sequence” remark in the green match card with a neutral title, keep the “not in database” sentence, and add a button that opens a submission modal; the modal will create a pre‑filled GitHub Issue for review by moderators. Once approved, the sequence can be added to `seqDatabase` (and persisted in the repository).
 
 ### Code Quality
