@@ -1055,6 +1055,9 @@ body.light-theme {
 
 /* Theme Toggle Button */
 .theme-toggle {
+  position: absolute;
+  top: 0;
+  right: 36px;
   width: 24px;
   height: 24px;
   border: 1px solid var(--border-color);
@@ -1064,7 +1067,6 @@ body.light-theme {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-left: 0.5rem;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .theme-toggle:hover {
@@ -1171,8 +1173,8 @@ body.light-theme table#seq-table th {
       <h1 id="main-title">Hiccup Sequence Explorer</h1>
       <p>Identify and generate self-referential integer sequences.</p>
 
-      <button class="info-btn" onclick="openHelpModal()" aria-label="Explain Hiccup Sequences" title="Explain Hiccup Sequences">ⓘ</button>
       <button class="theme-toggle" id="theme-toggle" aria-label="Toggle light/dark theme" title="Toggle light/dark theme"></button>
+      <button class="info-btn" onclick="openHelpModal()" aria-label="Explain Hiccup Sequences" title="Explain Hiccup Sequences">ⓘ</button>
     </header>
 
     <!-- SECTION 1 — IDENTIFY AN UNKNOWN SEQUENCE -->
