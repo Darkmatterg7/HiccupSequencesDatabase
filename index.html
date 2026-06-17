@@ -2137,11 +2137,11 @@ body.light-theme table#seq-table th {
         `;
       } else {
         // Case B: Valid, No Database Match
-        const isBeatty = Math.abs(y - z) === 1;
+        const isBeatty = Math.abs(y - z) === 1 && x <= z && y > 1;
         const beattyNoteHtml = isBeatty ? `
           <div class="math-formula-box" style="border-left-color: var(--success);">
             <span class="label">Beatty Sequence Candidate</span>
-            <span class="formula">Since |y &minus; z| = 1 (|${y} &minus; ${z}| = 1), this sequence constitutes a Beatty Sequence. Its slope represents an irrational value!</span>
+            <span class="formula">Since |y &minus; z| = 1 (|${y} &minus; ${z}| = 1), x &le; z (${x} &le; ${z}) and y &gt; 1 (${y} &gt; 1), this sequence constitutes a Beatty Sequence. Its slope represents an irrational value!</span>
           </div>
         ` : '';
 
