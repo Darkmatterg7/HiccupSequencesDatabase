@@ -160,7 +160,7 @@
       background: var(--accent);
       color: var(--bg);
       box-shadow: 0 0 12px var(--accent-glow);
-      transform: scale(1.05);
+      transform: scale(1.02);
     }
 
     /* Core Card Panels (Scientific Sheets) */
@@ -1895,6 +1895,43 @@ body.light-theme table#seq-table th {
       document.getElementById('help-modal').close();
     }
 
+    function openSubmissionModal(j, x, y, z, seqArray) {
+      document.getElementById('submitted-params').value = `(${j}, ${x}, ${y}, ${z})`;
+      document.getElementById('submitted-seq').value = seqArray.join(', ');
+      document.getElementById('submitted-notes').value = '';
+      document.getElementById('submission-modal').showModal();
+    }
+
+    function closeSubmissionModal() {
+      document.getElementById('submission-modal').close();
+    }
+
+    function submitSequence() {
+      const [_, jj, xx, yy, zz] = document.getElementById('submitted-params').value.match(/\((\d+), (\d+), (\d+), (\d+)\)/);
+      const seq = document.getElementById('submitted-seq').value.split(',').map(s => s.trim()).filter(Boolean);
+      const notes = document.getElementById('submitted-notes').value.trim();
+
+      const issueTitle = `New hiccup sequence submission (j=${jj}, x=${xx}, y=${yy}, z=${zz})`;
+      const issueBody = [
+        '**New hiccup sequence submission**',
+        '',
+        `- Parameters: (${jj}, ${xx}, ${yy}, ${zz})`,
+        `- Sequence: ${seq.join(', ')}`,
+        notes ? `- Notes: ${notes}` : '',
+        '',
+        '---',
+        '*Submitted via the Hiccup Sequence Explorer UI.*'
+      ].filter(line => line !== '').join('\n\n');
+
+      const encodedBody = encodeURIComponent(issueBody);
+      const issueUrl = `https://github.com/Darkmatterg7/HiccupSequencesDatabase/issues/new?title=${encodeURIComponent(issueTitle)}&body=${encodedBody}`;
+
+      window.open(issueUrl, '_blank');
+
+      closeSubmissionModal();
+      showToast('Issue opened – thank you for contributing!', 'success');
+    }
+
     // Live parameter validators for input constraints in Section 2
     function validateParamsLive() {
       const y = parseInt(document.getElementById('param-y').value);
@@ -2093,7 +2130,7 @@ body.light-theme table#seq-table th {
           <div class="match-card" style="border-color: var(--success); box-shadow: 0 12px 30px rgba(16, 185, 129, 0.15);">
             <div class="match-header">
               <div>
-                <h3 class="match-title" style="color:var(--success);">✓ Valid Hiccup Sequence</h3>
+                <h3 class="match-title" style="color:var(--success);">New Sequence Candidate</h3>
                 <div class="param-pillbox mt-4">
                   <span class="param-pill">j = <span>${j}</span></span>
                   <span class="param-pill">x = <span>${x}</span></span>
@@ -2105,11 +2142,18 @@ body.light-theme table#seq-table th {
                 NEW
               </span>
             </div>
-            
+
             <p class="match-description">
-              This sequence is not present in our database of known hiccup sequences, but it perfectly satisfies the self-referential definition!
+              This sequence is not present in our database of known hiccup sequences.
             </p>
-            
+
+            <!-- Provide-connection button -->
+            <div style="margin-top:1rem; text-align:right;">
+              <button class="btn" onclick="openSubmissionModal(${j},${x},${y},${z},'${seq.join()}')">
+                Provide connection?
+              </button>
+            </div>
+
             ${beattyNoteHtml}
 
             <div class="card-actions">
@@ -3070,5 +3114,36 @@ function loadRandomReferenceExample() {
 }
 
   </script>
+<dialog id="submission-modal" aria-labelledby="submission-title">
+  <div class="modal-header">
+    <h3 id="submission-title">Submit a New Hiccup Sequence</h3>
+    <button class="modal-close-btn" onclick="closeSubmissionModal()">&times;</button>
+  </div>
+  <div class="modal-content">
+    <p>Please share any additional information that would help reviewers decide whether to add this sequence to the database.</p>
+
+    <!-- Read-only summary -->
+    <div class="form-group">
+      <label for="submitted-params" class="input-label">Parameters (j,x,y,z)</label>
+      <input type="text" id="submitted-params" readonly>
+    </div>
+    <div class="form-group">
+      <label for="submitted-seq" class="input-label">Sequence (first 50 terms)</label>
+      <textarea id="submitted-seq" rows="3" readonly></textarea>
+    </div>
+
+    <!-- Optional free-form notes -->
+    <div class="form-group">
+      <label for="submitted-notes" class="input-label">Notes (optional)</label>
+      <textarea id="submitted-notes" rows="4" placeholder="e.g., where you found it, any conjectures, etc."></textarea>
+    </div>
+
+    <!-- Action buttons -->
+    <div style="text-align:right; margin-top:1rem;">
+      <button class="btn" onclick="submitSequence()">Submit for Review</button>
+      <button class="modal-close-btn" onclick="closeSubmissionModal()">Cancel</button>
+    </div>
+  </div>
+</dialog>
 </body>
 </html>
