@@ -1255,7 +1255,6 @@ body.light-theme table#seq-table th {
     <section class="journal-section" aria-labelledby="section3-title">
       <h2 id="section3-title" class="section-title"></h2>
       <button class="toggle-trigger-btn" id="table-toggle-btn" onclick="toggleReferenceTable()" aria-label="Toggle reference table visibility" aria-expanded="false">
-        <span class="icon">🔍</span>
         <span>Browse all known hiccup sequences</span>
         <span class="icon">▼</span>
       </button>
@@ -1895,9 +1894,9 @@ body.light-theme table#seq-table th {
       document.getElementById('help-modal').close();
     }
 
-    function openSubmissionModal(j, x, y, z, seqArray) {
+    function openSubmissionModal(j, x, y, z, seqString) {
       document.getElementById('submitted-params').value = `(${j}, ${x}, ${y}, ${z})`;
-      document.getElementById('submitted-seq').value = seqArray.join(', ');
+      document.getElementById('submitted-seq').value = seqString;
       document.getElementById('submitted-notes').value = '';
       document.getElementById('submission-modal').showModal();
     }
@@ -1908,7 +1907,8 @@ body.light-theme table#seq-table th {
 
     function submitSequence() {
       const [_, jj, xx, yy, zz] = document.getElementById('submitted-params').value.match(/\((\d+), (\d+), (\d+), (\d+)\)/);
-      const seq = document.getElementById('submitted-seq').value.split(',').map(s => s.trim()).filter(Boolean);
+      const seqString = document.getElementById('submitted-seq').value;
+      const seq = seqString.split(',').map(s => s.trim()).filter(Boolean);
       const notes = document.getElementById('submitted-notes').value.trim();
 
       const issueTitle = `New hiccup sequence submission (j=${jj}, x=${xx}, y=${yy}, z=${zz})`;
