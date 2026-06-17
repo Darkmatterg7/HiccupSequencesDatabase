@@ -1171,7 +1171,7 @@ body.light-theme table#seq-table th {
       <h1 id="main-title">Hiccup Sequence Explorer</h1>
       <p>Identify and generate self-referential integer sequences.</p>
 
-      <button class="info-btn" onclick="openHelpModal()" aria-label="Explain Hiccup Sequences" title="Explain Hiccup Sequences">?</button>
+      <button class="info-btn" onclick="openHelpModal()" aria-label="Explain Hiccup Sequences" title="Explain Hiccup Sequences">ⓘ</button>
       <button class="theme-toggle" id="theme-toggle" aria-label="Toggle light/dark theme" title="Toggle light/dark theme"></button>
     </header>
 
@@ -1193,11 +1193,8 @@ body.light-theme table#seq-table th {
         </div>
       </div>
 
-      <button id="analyse-btn" class="btn" onclick="runAnalysis()" aria-label="Analyse sequence for hiccup pattern">
-        Analyse Sequence
-      </button>
-      <button id="match-btn" class="btn" style="margin-left: 10px;" onclick="runMatch()" aria-label="Find matches for entered sequence in database">
-        Find Matches
+      <button id="check-records-btn" class="btn" onclick="checkRecords()" aria-label="Check sequence for hiccup pattern and find matches in database">
+        Check Records
       </button>
 
       <!-- Section 1 Results display -->
@@ -1252,13 +1249,10 @@ body.light-theme table#seq-table th {
 
     <!-- SECTION 3 — REFERENCE DATABASE TABLE -->
     <section class="journal-section" aria-labelledby="section3-title">
-      <h2 id="section3-title" class="section-title">
-        <svg viewBox="0 0 24 24"><path d="M12 4a1 1 0 011 1v9a1 1 0 002 0V5a2 2 0 00-2-2 2 2 0 00-2 2v8a1 1 0 002 0V5a1 1 0 011-1zM4.93 9.07a1 1 0 00-1.41 1.41l1.06 1.06a1 1 0 101.41-1.41l-.94-.94a3 3 0 014.24 0l.94.94a1 1 0 101.41 1.41l1.06-1.06a1 1 0 00-1.41-1.41l-.94.94a1 1 0 00-1.41 1.41zm10.14-2.29a1 1 0 00-1.41 1.41l1.06 1.06a1 1 0 101.41-1.41l-.94-.94a3 3 0 014.24 0l.94.94a1 1 0 001.41 1.41l1.06-1.06a1 1 0 101.41-1.41l-.94-.94z"/></svg>
-        Browse all known hiccup sequences
-      </h2>
+      <h2 id="section3-title" class="section-title"></h2>
       <button class="toggle-trigger-btn" id="table-toggle-btn" onclick="toggleReferenceTable()" aria-label="Toggle reference table visibility" aria-expanded="false">
         <span class="icon">🔍</span>
-        <span>Browse all known hiccup sequences (Tables 1 & 3)</span>
+        <span>Browse all known hiccup sequences</span>
         <span class="icon">▼</span>
       </button>
       
@@ -2738,6 +2732,129 @@ body.light-theme table#seq-table th {
           resultsContainer.appendChild(actionButtons);
           updateHashFromState();
         }
+
+      }, 150);
+    }
+
+    // Check records - combined analysis and matching
+    function checkRecords() {
+      const inputVal = document.getElementById('sequence-input').value;
+      const parsedSeq = parseInputSequence(inputVal);
+      const resultsDiv = document.getElementById('analysis-results');
+
+      if (parsedSeq.length === 0) {
+        resultsDiv.innerHTML = `
+          <div class="alert-panel danger">
+            <h4>✗ Invalid Input</h4>
+            <p>Please enter comma-separated or space-separated integers in the textarea above.</p>
+          </div>
+        `;
+        resultsDiv.style.display = 'block';
+        return;
+      }
+
+      // Add a tiny visual processing delay (quality feeling)
+      const btn = document.getElementById('check-records-btn');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = `<span class="spinner"></span> Checking...`;
+      btn.disabled = true;
+
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+
+        const validation = validateHiccup(parsedSeq);
+
+        if (!validation.valid) {
+          let extraTips = "";
+          if (validation.diffs && validation.diffs.length > 0) {
+            const uniqueGaps = [...new Set(validation.diffs)].sort((a,b)=>a-b);
+            extraTips = `
+              <div class="tip mt-4">
+                <strong>First Difference Gaps Analysis:</strong><br>
+                Sequence Differences: [${validation.diffs.slice(0, 15).join(', ')}${validation.diffs.length > 15 ? '...' : ''}]<br>
+                Found ${uniqueGaps.length} distinct gaps: [${uniqueGaps.join(', ')}]
+              </div>
+            `;
+          }
+
+          resultsDiv.innerHTML = `
+            <div class="alert-panel danger">
+              <h4>✗ Not a Hiccup Sequence</h4>
+              <p>${validation.reason}</p>
+              ${extraTips}
+            </div>
+          `;
+          resultsDiv.style.display = 'block';
+          resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          return;
+        }
+
+        // It is a valid sequence!
+        const { j, x, y, z, diffs } = validation;
+
+        // Match against database
+        const matchResult = matchDatabase(j, x, y, z, parsedSeq, seqDatabase);
+
+        let finalHtml = `
+          <div class="alert-panel success" style="margin-bottom: 1.5rem;">
+            <h4>✓ Sequence Authenticated</h4>
+            <p>Passed all mathematical parameters for a <strong>(${j}, ${x}, ${y}, ${z})-hiccup</strong> sequence rule.</p>
+          </div>
+
+          <h4 class="mb-2" style="font-family:var(--font-sans); color:var(--text-muted); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.05em;">Difference Pattern Rhythm Strip:</h4>
+          ${makeRhythmStripHtml(diffs, y, z)}
+
+          <div style="margin-top: 1.5rem;">
+            ${buildMatchCardHtml(j, x, y, z, parsedSeq, matchResult)}
+          </div>
+
+          <div style="margin-top: 1.5rem; display: flex; gap: 10px; flex-wrap: wrap;" class="action-buttons">
+            <button class="btn btn-secondary" onclick="copyToClipboard([${parsedSeq.join(',')}])">Copy Sequence</button>
+            <button class="btn btn-secondary" onclick="
+              const matchResult = matchDatabase(${j}, ${x}, ${y}, ${z}, [${parsedSeq.join(',')}], seqDatabase);
+              exportAsJSON({
+                sequence: [${parsedSeq.join(',')}],
+                parameters: {j: ${j}, x: ${x}, y: ${y}, z: ${z}},
+                match: matchResult ? {
+                  oeis: matchResult.entry.oeis,
+                  name: matchResult.entry.name,
+                  matchType: matchResult.matchType,
+                  offset: matchResult.offset,
+                  scale: matchResult.scale
+                } : null
+              }, 'hiccup-analysis-${Date.now()}.json');
+            ">Export Analysis (JSON)</button>
+            <button class="btn btn-secondary" onclick="
+              const matchResult = matchDatabase(${j}, ${x}, ${y}, ${z}, [${parsedSeq.join(',')}], seqDatabase);
+              exportAsCSV([${parsedSeq.join(',')}], 'hiccup-analysis-${Date.now()}.csv');
+            ">Export Analysis (CSV)</button>
+            <button class="btn btn-secondary" onclick="
+              const matchResult = matchDatabase(${j}, ${x}, ${y}, ${z}, [${parsedSeq.join(',')}], seqDatabase);
+              exportAsJSON({
+                sequence: [${parsedSeq.join(',')}],
+                parameters: {j: ${j}, x: ${x}, y: ${y}, z: ${z}},
+                match: matchResult ? {
+                  oeis: matchResult.entry.oeis,
+                  name: matchResult.entry.name,
+                  matchType: matchResult.matchType,
+                  offset: matchResult.offset,
+                  scale: matchResult.scale
+                } : null
+              }, 'hiccup-match-${Date.now()}.json');
+            ">Export Match (JSON)</button>
+            <button class="btn btn-secondary" onclick="
+              const matchResult = matchDatabase(${j}, ${x}, ${y}, ${z}, [${parsedSeq.join(',')}], seqDatabase);
+              exportAsCSV([${parsedSeq.join(',')}], 'hiccup-match-${Date.now()}.csv');
+            ">Export Match (CSV)</button>
+            <button class="btn btn-secondary" onclick="exportChartAsPNG('hiccup-chart-${Date.now()}.png')">Export Chart (PNG)</button>
+          </div>
+        `;
+
+        resultsDiv.innerHTML = finalHtml;
+        resultsDiv.style.display = 'block';
+        resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        updateHashFromState();
 
       }, 150);
     }
