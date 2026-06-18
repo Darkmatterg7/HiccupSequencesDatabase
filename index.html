@@ -1903,7 +1903,7 @@ body.light-theme table#seq-table th {
       document.getElementById('submission-modal').close();
     }
 
-    function submitSequence() {
+    async function submitSequence() {
       const [_, jj, xx, yy, zz] = document.getElementById('submitted-params').value.match(/\((\d+), (\d+), (\d+), (\d+)\)/);
       const seqString = document.getElementById('submitted-seq').value;
       const seq = seqString.split(',').map(s => s.trim()).filter(Boolean);
@@ -1912,41 +1912,176 @@ body.light-theme table#seq-table th {
       const oeisId = document.getElementById('submitted-oeis').value.trim();
       const name = document.getElementById('submitted-name').value.trim();
       const formula = document.getElementById('submitted-formula').value.trim();
-      const slope = document.getElementById('submitted-slope').value.trim();
+      const userSlope = document.getElementById('submitted-slope').value.trim();
       const description = document.getElementById('submitted-description').value.trim();
       const morphism = document.getElementById('submitted-morphism').value.trim();
       const boundLow = document.getElementById('submitted-bound-low').value.trim();
       const boundHigh = document.getElementById('submitted-bound-high').value.trim();
 
-      const issueTitle = `New hiccup sequence submission (j=${jj}, x=${xx}, y=${yy}, z=${zz})`;
-      const issueBodyLines = [
-        '**New hiccup sequence submission**',
-        '',
-        `- Parameters: (${jj}, ${xx}, ${yy}, ${zz})`,
-        `- Sequence: ${seq.join(', ')}`,
-        oeisId ? `- OEIS ID: ${oeisId}` : '',
-        name ? `- Name / properties: ${name}` : '',
-        formula ? `- Closed‑form formula: ${formula}` : '',
-        slope ? `- Slope: ${slope}` : '',
-        description ? `- Description: ${description}` : '',
-        morphism ? `- Generating morphism: ${morphism}` : '',
-        boundLow !== '' ? `- Bounds low: ${boundLow}` : '',
-        boundHigh !== '' ? `- Bounds high: ${boundHigh}` : '',
-        notes ? `- Notes: ${notes}` : '',
-        '',
-        '---',
-        '*Submitted via the Hiccup Sequence Explorer UI.*'
-      ];
-      // filter out empty lines
-      const issueBody = issueBodyLines.filter(line => line !== '').join('\n\n');
+      // Parse sequence to numbers
+      const seqNum = seq.map(Number);
 
-      const encodedBody = encodeURIComponent(issueBody);
-      const issueUrl = `https://github.com/Darkmatterg7/HiccupSequencesDatabase/issues/new?title=${encodeURIComponent(issueTitle)}&body=${encodedBody}`;
+      // Basic client-side validation: strictly increasing integers
+      let basicValid = true;
+      let basicMsg = '';
+      if (seqNum.length < 3) {
+        basicValid = false;
+        basicMsg = 'Sequence must have at least 3 terms.';
+      } else {
+        for (let i = 1; i < seqNum.length; i++) {
+          if (!Number.isInteger(seqNum[i]) || seqNum[i] <= seqNum[i-1]) {
+            basicValid = false;
+            basicMsg = `Sequence must be strictly increasing integers. Problem at term ${seqNum[i]} (index ${i+1}).`;
+            break;
+          }
+        }
+      }
+      if (!basicValid) {
+        showToast(basicMsg, 'error');
+        return;
+      }
 
-      window.open(issueUrl, '_blank');
+      // Run hiccup validation
+      const validation = validateHiccup(seqNum);
+      if (!validation.valid) {
+        showToast(`Invalid hiccup sequence: ${validation.reason}`, 'error');
+        return;
+      }
+      const { j, x, y, z } = validation; // corrected params from validation
 
-      closeSubmissionModal();
-      showToast('Issue opened – thank you for contributing!', 'success');
+      // Check against database
+      const matchResult = matchDatabase(j, x, y, z, seqNum, seqDatabase);
+
+      // Beatty check
+      const isBeatty = Math.abs(y - z) === 1 && x <= z && y > 1;
+
+      // Compute linear regression slope for sequence (for slope rationality check)
+      const { slope: computedSlope } = fitLinearRegression(seqNum);
+
+      // Determine slope storage and display
+      let slopeValue; // value to store in seqDatabase (string if rational user-provided, number otherwise)
+      let slopeType = 'none';
+      let slopeDisplay = '';
+
+      if (userSlope !== '') {
+        // Try to parse as p/q
+        const parts = userSlope.split('/');
+        if (parts.length === 2) {
+          const p = parseInt(parts[0]);
+          const q = parseInt(parts[1]);
+          if (!isNaN(p) && !isNaN(q) && q !== 0) {
+            const rational = p / q;
+            if (Math.abs(computedSlope - rational) <= 0.1 * Math.abs(computedSlope)) {
+              slopeValue = userSlope; // keep as string "p/q"
+              slopeType = 'userRational';
+              slopeDisplay = `${userSlope} (= ${rational.toFixed(4)})`;
+            } else {
+              // Not close enough, treat as irrational
+              slopeValue = computedSlope;
+              slopeType = 'computedIrrational';
+              slopeDisplay = `${computedSlope.toFixed(4)} (≈)`;
+            }
+          } else {
+            // Not a valid fraction, treat as user-provided float
+            const userSlopeNum = parseFloat(userSlope);
+            if (!isNaN(userSlopeNum)) {
+              slopeValue = userSlopeNum;
+              slopeType = 'userFloat';
+              slopeDisplay = `${userSlopeNum.toFixed(4)}`;
+            } else {
+              // invalid, fallback to computed
+              slopeValue = computedSlope;
+              slopeType = 'computedIrrational';
+              slopeDisplay = `${computedSlope.toFixed(4)} (≈)`;
+            }
+          }
+        } else {
+          // Not a fraction, treat as float
+          const userSlopeNum = parseFloat(userSlope);
+          if (!isNaN(userSlopeNum)) {
+            slopeValue = userSlopeNum;
+            slopeType = 'userFloat';
+            slopeDisplay = `${userSlopeNum.toFixed(4)}`;
+          } else {
+            slopeValue = computedSlope;
+            slopeType = 'computedIrrational';
+            slopeDisplay = `${computedSlope.toFixed(4)} (≈)`;
+          }
+        }
+      } else {
+        // No user slope provided
+        slopeValue = computedSlope;
+        slopeType = 'computedIrrational';
+        slopeDisplay = `${computedSlope.toFixed(4)} (≈)`;
+      }
+
+      // Build payload for GitHub storage and JSON data
+      const payload = {
+        seq: seqNum,
+        j: j,
+        x: x,
+        y: y,
+        z: z,
+        matchResult: matchResult,
+        isBeatty: isBeatty,
+        userSlope: userSlope,
+        computedSlope: computedSlope,
+        slopeValue: slopeValue,
+        slopeType: slopeType,
+        oeisId: oeisId,
+        name: name,
+        formula: formula,
+        description: description,
+        morphism: morphism,
+        boundLow: boundLow,
+        boundHigh: boundHigh,
+        notes: notes
+      };
+
+      try {
+        showToast('Creating pull request for review...', 'info');
+
+        // Get GitHub token
+        const token = await getGitHubToken();
+
+        // Generate markdown content
+        const markdownContent = generateSequenceMarkdown(payload);
+
+        // Get latest commit SHA on main branch
+        const mainRef = await githubApiRequest('/git/ref/heads/main');
+        const latestSha = mainRef.object.sha;
+
+        // Create branch name
+        const timestamp = Date.now();
+        const branchName = `sequence-preview/${timestamp}`;
+
+        // Create branch
+        await createBranch(branchName, latestSha);
+
+        // Create markdown file
+        const filePath = `pending-sequences/seq-${timestamp}.md`;
+        await createOrUpdateFile(
+          filePath,
+          markdownContent,
+          branchName,
+          `Add sequence preview for submission ${timestamp}`
+        );
+
+        // Create pull request
+        const prTitle = `Preview sequence submission ${timestamp}`;
+        const prBody = `This PR contains a markdown file with the sequence details for review.\n\nPlease review the file in the pending-sequences directory. If approved, the sequence will be added to the database via GitHub Actions.`;
+        const prData = await createPullRequest(branchName, prTitle, prBody, ['sequence-preview']);
+
+        // Success!
+        closeSubmissionModal();
+        showToast(`Pull request created! Review it at ${prData.html_url}`, 'success');
+
+        // Optionally, open the PR in a new tab
+        // window.open(prData.html_url, '_blank');
+      } catch (error) {
+        console.error('Error creating pull request:', error);
+        showToast(`Failed to create pull request: ${error.message}`, 'error');
+      }
     }
 
     // Live parameter validators for input constraints in Section 2
@@ -2263,7 +2398,7 @@ body.light-theme table#seq-table th {
           </div>
 
           <div style="margin-top: 1.5rem; display: flex; gap: 10px; flex-wrap: wrap;" class="action-buttons">
-            <button class="btn btn-secondary" onclick="copyToClipboard([${parsedSeq.join(',')}])" aria-label="Copy sequence">📋</button>
+            <button class="btn btn-secondary" onclick="copyToClipboard(${parsedSeq.join(',')})" aria-label="Copy sequence">📋</button>
             <button class="btn btn-secondary" onclick="
               const matchResult = matchDatabase(${j}, ${x}, ${y}, ${z}, [${parsedSeq.join(',')}], seqDatabase);
               exportAsJSON({
@@ -2388,7 +2523,7 @@ body.light-theme table#seq-table th {
           </div>
 
           <div style="margin-top: 1.5rem; display: flex; gap: 10px; flex-wrap: wrap;" class="action-buttons">
-            <button class="btn btn-secondary" onclick="copyToClipboard([${seq.join(',')}])" aria-label="Copy sequence">📋</button>
+            <button class="btn btn-secondary" onclick="copyToClipboard(${seq.join(',')})" aria-label="Copy sequence">📋</button>
             <button class="btn btn-secondary" onclick="
               const matchResult = matchDatabase(${j}, ${x}, ${y}, ${z}, [${seq.join(',')}], seqDatabase);
               exportAsJSON({
@@ -2773,7 +2908,7 @@ body.light-theme table#seq-table th {
           actionButtons.className = 'action-buttons';
           actionButtons.style = 'margin-top: 1.5rem; display: flex; gap: 10px; flex-wrap: wrap;';
           actionButtons.innerHTML = `
-            <button class="btn btn-secondary" onclick="copyToClipboard([${parsedSeq.join(',')}])" aria-label="Copy sequence">📋</button>
+            <button class="btn btn-secondary" onclick="copyToClipboard(${parsedSeq.join(',')})" aria-label="Copy sequence">📋</button>
             <button class="btn btn-secondary" onclick="
               const matchResult = matchDatabase(${j}, ${x}, ${y}, ${z}, [${parsedSeq.join(',')}], seqDatabase);
               exportAsJSON({
@@ -2875,7 +3010,7 @@ body.light-theme table#seq-table th {
           </div>
 
           <div style="margin-top: 1.5rem; display: flex; gap: 10px; flex-wrap: wrap;" class="action-buttons">
-            <button class="btn btn-secondary" onclick="copyToClipboard([${parsedSeq.join(',')}])" aria-label="Copy sequence">📋</button>
+            <button class="btn btn-secondary" onclick="copyToClipboard(${parsedSeq.join(',')})" aria-label="Copy sequence">📋</button>
             <button class="btn btn-secondary" onclick="
               const matchResult = matchDatabase(${j}, ${x}, ${y}, ${z}, [${parsedSeq.join(',')}], seqDatabase);
               exportAsJSON({
@@ -3128,6 +3263,145 @@ function loadRandomReferenceExample() {
   autofillGenerator(entry.j, entry.x, entry.y, entry.z);
 
   showToast(`Loaded random example: ${entry.oeis} - ${entry.name}`, 'success');
+}
+
+// GitHub API Helper Functions
+async function githubApiRequest(endpoint, method = 'GET', data = null) {
+  const token = localStorage.getItem('githubToken');
+  if (!token) {
+    throw new Error('GitHub token not found. Please configure your token in localStorage.');
+  }
+
+  const headers = {
+    'Authorization': `token ${token}`,
+    'Accept': 'application/vnd.github.v3+json',
+    'Content-Type': 'application/json'
+  };
+
+  const url = `https://api.github.com/repos/Darkmatterg7/HiccupSequencesDatabase${endpoint}`;
+
+  const response = await fetch(url, {
+    method,
+    headers,
+    body: data ? JSON.stringify(data) : null
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`GitHub API error: ${response.status} ${response.statusText}\n${errorText}`);
+  }
+
+  return await response.json();
+}
+
+async function getGitHubToken() {
+  let token = localStorage.getItem('githubToken');
+  if (token) {
+    return token;
+  }
+
+  // Prompt user for token
+  token = prompt(
+    'GitHub Personal Access Token Required\n\n' +
+    'To submit sequences for review, you need to provide a GitHub Personal Access Token.\n\n' +
+    '1. Go to https://github.com/settings/tokens\n' +
+    '2. Click "Generate new token" -> "Generate new token (classic)"\n' +
+    '3. Select repo scope (for full control of private repositories)\n' +
+    '   OR for public repo only: select repository scope\n' +
+    '4. Copy the generated token\n\n' +
+    'Enter your GitHub Personal Access Token:'
+  );
+
+  if (token) {
+    localStorage.setItem('githubToken', token);
+    return token;
+  } else {
+    throw new Error('GitHub token is required for sequence submission.');
+  }
+}
+
+async function createBranch(branchName, baseSha) {
+  await githubApiRequest(`/git/refs`, 'POST', {
+    ref: `refs/heads/${branchName}`,
+    sha: baseSha
+  });
+}
+
+async function createOrUpdateFile(path, content, branchName, commitMessage) {
+  // First check if file exists to get its SHA (for updates)
+  let fileSha = null;
+  try {
+    const fileData = await githubApiRequest(`/contents/${path}?ref=${branchName}`);
+    fileSha = fileData.sha;
+  } catch (error) {
+    // File doesn't exist, which is fine for creation
+  }
+
+  await githubApiRequest(`/contents/${path}`, 'PUT', {
+    message: commitMessage,
+    content: btoa(content), // GitHub API expects base64 encoded content
+    branch: branchName,
+    sha: fileSha // If null, creates file; if provided, updates file
+  });
+}
+
+async function createPullRequest(branchName, title, body, labels = []) {
+  const prData = await githubApiRequest(`/pulls`, 'POST', {
+    title,
+    head: branchName,
+    base: 'main',
+    body,
+    labels
+  });
+  return prData;
+}
+
+// Function to generate markdown content for sequence submission
+function generateSequenceMarkdown(payload) {
+  const { seq, j, x, y, z, matchResult, isBeatty, userSlope, computedSlope, slopeValue, slopeType, oeisId, name, formula, description, morphism, boundLow, boundHigh, notes } = payload;
+  let md = '';
+  md += '**New hiccup sequence submission**\n\n';
+  md += `- Parameters: (${j},${x},${y},${z})\n`;
+  md += `- Sequence: ${seq.join(', ')}\n\n`;
+  md += '**🔍 AUTOMATED VALIDATION** ✅\n';
+  md += `- Valid (${j},${x},${y},${z})-hiccup sequence: YES\n`;
+  md += `- Beatty sequence candidate: ${isBeatty ? 'YES' : 'NO'} (|y−z|=1 ∧ x≤z ∧ y>1)\n\n`;
+  md += '**📚 DATABASE CHECK** ${matchResult ? '🔁' : '🆕'}\n';
+  if (matchResult) {
+    md += `- Match type: ${matchResult.matchType}\n`;
+    if (matchResult.matchType === 'exact') {
+      md += `- Exact match with ${matchResult.entry.oeis}\n`;
+    } else if (matchResult.matchType === 'translate') {
+      md += `- Translated match (offset ${matchResult.offset}) with ${matchResult.entry.oeis}\n`;
+    } else if (matchResult.matchType === 'scale') {
+      md += `- Scaled match (scale ${matchResult.scale}) with ${matchResult.entry.oeis}\n`;
+    }
+  } else {
+    md += `- No match found in database\n`;
+  }
+  md += '\n**📐 SLOPE ASSESSMENT**\n';
+  md += `- User-provided slope: ${userSlope || '(not provided)'}\n`;
+  md += `- Computed linear regression slope: ${computedSlope.toFixed(4)}\n`;
+  md += `- Slope classification: ${slopeType}\n`;
+  md += `- Slope to store: ${slopeValue instanceof Array ? JSON.stringify(slopeValue) : (typeof slopeValue === 'string' ? slopeValue : slopeValue.toString())}\n\n`;
+  md += '**📝 OPTIONAL FIELDS**\n';
+  md += `- OEIS ID: ${oeisId || '(not provided)'}\n`;
+  md += `- Name / properties: ${name || '(not provided)'}\n`;
+  md += `- Closed‑form formula: ${formula || '(not provided)'}\n`;
+  md += `- Description: ${description || '(not provided)'}\n`;
+  md += `- Generating morphism: ${morphism || '(not provided)'}\n`;
+  md += `- Bounds low: ${boundLow || '(not provided)'}\n`;
+  md += `- Bounds high: ${boundHigh || '(not provided)'}\n`;
+  md += `- Notes: ${notes || '(not provided)'}\n\n`;
+  md += '**✅ MODERATOR ACTION**\n';
+  md += 'Please review the above information. If everything looks correct, approve the linked pull request to add this sequence to the database.\n';
+  md += 'If you wish to omit any field, edit this markdown file and remove the corresponding line before approving.\n\n';
+  md += '---\n';
+  md += '*Submitted via the Hiccup Sequence Explorer UI.*\n\n';
+  md += '```json\n';
+  md += JSON.stringify(payload, null, 2);
+  md += '\n```\n';
+  return md;
 }
 
   </script>

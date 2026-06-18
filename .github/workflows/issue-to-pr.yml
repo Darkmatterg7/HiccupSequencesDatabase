@@ -1,0 +1,231 @@
+name: Process New Sequence Issue
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+    if: startsWith(github.event.issue.title, 'New hiccup sequence submission')
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Extract issue data
+        id: extract
+        run: |
+          ISSUE_NUMBER=${{ github.event.issue.number }}
+          ISSUE_BODY="${{ github.event.issue.body }}"
+          echo "Issue number: $ISSUE_NUMBER"
+          # Extract JSON block from issue body
+          JSON_BLOCK=$(echo "$ISSUE_BODY" | sed -n '/^```json$/,/^```$/p' | sed '1d;$d')
+          if [ -z "$JSON_BLOCK" ]; then
+            echo "No JSON block found in issue body"
+            exit 1
+          fi
+          echo "$JSON_BLOCK" > payload.json
+          # Validate JSON
+          node -e "const data=require('./payload.json'); console.log('Payload loaded:', data.seq.length);"
+
+      - name: Validate sequence (security)
+        id: validate
+        run: |
+          node -e "
+            const { validateHiccup, matchDatabase, fitLinearRegression } = require('./index.html');
+            const fs = require('fs');
+            const payload = JSON.parse(fs.readFileSync('payload.json', 'utf8'));
+            const seq = payload.seq;
+            const validation = validateHiccup(seq);
+            if (!validation.valid) {
+              console.error('Validation failed:', validation.reason);
+              process.exit(1);
+            }
+            // Use corrected params from validation (should match payload)
+            const { j, x, y, z } = validation;
+            console.log('Validated params: j=${j}, x=${x}, y=${y}, z=${z}');
+            // Check Beatty
+            const isBeatty = Math.abs(y - z) === 1 && x <= z && y > 1;
+            console.log('Beatty:', isBeatty);
+            // Compute slope
+            const { slope: computedSlope } = fitLinearRegression(seq);
+            console.log('Computed slope:', computedSlope);
+            // Determine slope storage
+            let slopeValue, slopeType, slopeDisplay;
+            const userSlope = payload.userSlope;
+            if (userSlope !== '') {
+              const parts = userSlope.split('/');
+              if (parts.length === 2) {
+                const p = parseInt(parts[0]);
+                const q = parseInt(parts[1]);
+                if (!isNaN(p) && !isNaN(q) && q !== 0) {
+                  const rational = p / q;
+                  if (Math.abs(computedSlope - rational) <= 0.1 * Math.abs(computedSlope)) {
+                    slopeValue = userSlope;
+                    slopeType = 'userRational';
+                  } else {
+                    slopeValue = computedSlope;
+                    slopeType = 'computedIrrational';
+                  }
+                } else {
+                  const userSlopeNum = parseFloat(userSlope);
+                  if (!isNaN(userSlopeNum)) {
+                    slopeValue = userSlopeNum;
+                    slopeType = 'userFloat';
+                  } else {
+                    slopeValue = computedSlope;
+                    slopeType = 'computedIrrational';
+                  }
+                }
+              } else {
+                const userSlopeNum = parseFloat(userSlope);
+                if (!isNaN(userSlopeNum)) {
+                  slopeValue = userSlopeNum;
+                  slopeType = 'userFloat';
+                } else {
+                  slopeValue = computedSlope;
+                  slopeType = 'computedIrrational';
+                }
+              }
+            } else {
+              slopeValue = computedSlope;
+              slopeType = 'computedIrrational';
+            }
+            console.log('Slope value:', slopeValue, 'type:', slopeType);
+            // Write back enriched payload for later use
+            const enriched = {
+              ...payload,
+              validated: true,
+              j, x, y, z,
+              isBeatty,
+              computedSlope,
+              slopeValue,
+              slopeType
+            };
+            fs.writeFileSync('payload.json', JSON.stringify(enriched, null, 2));
+          "
+
+      - name: Create branch
+        id: branch
+        run: |
+          ISSUE_NUMBER=${{ github.event.issue.number }}
+          BRANCH_NAME="sequence-preview/${ISSUE_NUMBER}"
+          git checkout -b $BRANCH_NAME
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+      - name: Create markdown file
+        run: |
+          ISSUE_NUMBER=${{ github.event.issue.number }}
+          mkdir -p pending-sequences
+          # Generate markdown summary from payload
+          node -e "
+            const fs = require('fs');
+            const payload = JSON.parse(fs.readFileSync('payload.json', 'utf8'));
+            const { seq, j, x, y, z, matchResult, isBeatty, userSlope, computedSlope, slopeValue, slopeType, oeisId, name, formula, description, morphism, boundLow, boundHigh, notes } = payload;
+            let md = '';
+            md += '**New hiccup sequence submission**\\n\\n';
+            md += `- Parameters: (\${j},\${x},\${y},\${z})\\n`;
+            md += `- Sequence: \${seq.join(', ')}\\n\\n`;
+            md += '**🔍 AUTOMATED VALIDATION** ✅\\n';
+            md += `- Valid (\${j},\${x},\${y},\${z})-hiccup sequence: YES\\n`;
+            md += `- Beatty sequence candidate: \${isBeatty ? 'YES' : 'NO'} (|y−z|=1 ∧ x≤z ∧ y>1)\\n\\n`;
+            md += '**📚 DATABASE CHECK** \${matchResult ? '🔁' : '🆕'}\\n';
+            if (matchResult) {
+              md += `- Match type: \${matchResult.matchType}\\n`;
+              if (matchResult.matchType === 'exact') {
+                md += `- Exact match with \${matchResult.entry.oeis}\\n`;
+              } else if (matchResult.matchType === 'translate') {
+                md += `- Translated match (offset \${matchResult.offset}) with \${matchResult.entry.oeis}\\n`;
+              } else if (matchResult.matchType === 'scale') {
+                md += `- Scaled match (scale \${matchResult.scale}) with \${matchResult.entry.oeis}\\n`;
+              }
+            } else {
+              md += `- No match found in database\\n`;
+            }
+            md += '\\n**📐 SLOPE ASSESSMENT**\\n';
+            md += `- User-provided slope: \${userSlope || '(not provided)'}\\n`;
+            md += `- Computed linear regression slope: \${computedSlope.toFixed(4)}\\n`;
+            md += `- Slope classification: \${slopeType}\\n`;
+            md += `- Slope to store: \${slopeValue instanceof Array ? JSON.stringify(slopeValue) : (typeof slopeValue === 'string' ? slopeValue : slopeValue.toString())}\\n\\n`;
+            md += '**📝 OPTIONAL FIELDS**\\n';
+            md += `- OEIS ID: \${oeisId || '(not provided)'}\\n`;
+            md += `- Name / properties: \${name || '(not provided)'}\\n`;
+            md += `- Closed‑form formula: \${formula || '(not provided)'}\\n`;
+            md += `- Description: \${description || '(not provided)'}\\n`;
+            md += `- Generating morphism: \${morphism || '(not provided)'}\\n`;
+            md += `- Bounds low: \${boundLow || '(not provided)'}\\n`;
+            md += `- Bounds high: \${boundHigh || '(not provided)'}\\n`;
+            md += `- Notes: \${notes || '(not provided)'}\\n\\n`;
+            md += '**✅ MODERATOR ACTION**\\n';
+            md += 'Please review the above information. If everything looks correct, approve the linked pull request to add this sequence to the database.\\n';
+            md += 'If you wish to omit any field, edit this markdown file and remove the corresponding line before approving.\\n\\n';
+            md += '---\\n';
+            md += '*Submitted via the Hiccup Sequence Explorer UI.*\\n\\n';
+            md += '```json\\n';
+            md += JSON.stringify(payload, null, 2);
+            md += '\\n```\\n';
+            fs.writeFileSync(`pending-sequences/seq-\${ISSUE_NUMBER}.md`, md);
+          "
+
+      - name: Commit markdown file
+        run: |
+          git add pending-sequences/seq-${{ github.event.issue.number }}.md
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Add sequence preview for issue #${{ github.event.issue.number }}"
+
+      - name: Create Pull Request
+        id: pr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Add sequence preview for issue #${{ github.event.issue.number }}"
+          branch: sequence-preview/${{ github.event.issue.number }}
+          base: main
+          title: "Preview sequence for issue #${{ github.event.issue.number }}"
+          body: |
+            This PR contains a markdown file with the sequence details for issue #${{ github.event.issue.number }}.
+            Please review the file. If approved, the sequence will be added to the database.
+          labels: |
+            sequence-preview
+          draft: false
+
+      - name: Request review
+        run: |
+          # Request review from repository maintainer(s)
+          gh pr review ${{ steps.pr.outputs.pull_request_number }} --request reviewer @Darkmatterg7 || echo "Could not request review, continuing"
+
+      - name: Comment on issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue_number = ${{ github.event.issue.number }};
+            const pr_number = "${{ steps.pr.outputs.pull_request_number }}";
+            github.rest.issues.createComment({
+              issue_number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `A preview pull request has been created: #${pr_number}. Please review the markdown file in the PR. Once approved, the sequence will be added to the database.`
+            });
+
+      - name: Label issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: ${{ github.event.issue.number }},
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ['pending-review']
+            });

@@ -1,0 +1,312 @@
+name: Add Approved Sequence to Database
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  add-sequence:
+    runs-on: ubuntu-latest
+    if: |
+      github.event.review.state == 'approved' &&
+      github.event.pull_request.draft == false &&
+      contains(github.event.pull_request.labels.*.name, 'sequence-preview')
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Get PR number
+        id: pr
+        run: |
+          echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+
+      - name: Download markdown file
+        run: |
+          # Find the markdown file in the pending-sequences directory
+          MARKDOWN_FILE=$(ls pending-sequences/*.md 2>/dev/null | head -1 || echo "not found")
+          if [ "$MARKDOWN_FILE" = "not found" ]; then
+            echo "No markdown file found in pending-sequences/"
+            exit 1
+          fi
+          echo "markdown_file=$MARKDOWN_FILE" >> $GITHUB_OUTPUT
+          cp "$MARKDOWN_FILE" ./current-sequence.md
+
+      - name: Extract sequence data
+        id: extract
+        run: |
+          # Extract JSON from markdown file
+          JSON_BLOCK=$(sed -n '/^```json$/,/^```$/p' current-sequence.md | sed '1d;$d')
+          if [ -z "$JSON_BLOCK" ]; then
+            echo "No JSON block found in markdown file"
+            exit 1
+          fi
+          echo "$JSON_BLOCK" > sequence-data.json
+          # Validate JSON
+          node -e "const data=require('./sequence-data.json'); console.log('Data loaded for seq:', data.seq);"
+
+      - name: Validate sequence (final security check)
+        id: validate
+        run: |
+          node -e "
+            const { validateHiccup, matchDatabase, fitLinearRegression } = require('./index.html');
+            const fs = require('fs');
+            const payload = JSON.parse(fs.readFileSync('sequence-data.json', 'utf8'));
+
+            // Extract sequence and params
+            const seq = payload.seq;
+            const { j, x, y, z } = payload;
+
+            // Validate it's still a valid hiccup sequence
+            const validation = validateHiccup(seq);
+            if (!validation.valid) {
+              console.error('Validation failed:', validation.reason);
+              // Comment on PR and exit
+              const { github } = require('@actions/github');
+              const octokit = github.getOctokit(process.env.GITHUB_TOKEN);
+              octokit.rest.issues.createComment({
+                owner: process.env.GITHUB_REPOSITORY_OWNER,
+                repo: process.env.GITHUB_REPOSITORY.split('/')[1],
+                issue_number: {{
+                  github.event.pull_request.number
+                }},
+                body: '❌ **Validation failed**: The sequence is not a valid hiccup sequence.\\n\\nReason: ' + validation.reason
+              });
+              process.exit(1);
+            }
+
+            // Check if it's already in database (shouldn't be, but double-check)
+            const matchResult = matchDatabase(j, x, y, z, seq, seqDatabase);
+            if (matchResult) {
+              console.error('Sequence already exists in database:', matchResult);
+              const { github } = require('@actions/github');
+              const octokit = github.getOctokit(process.env.GITHUB_TOKEN);
+              octokit.rest.issues.createComment({
+                owner: process.env.GITHUB_REPOSITORY_OWNER,
+                repo: process.env.GITHUB_REPOSITORY.split('/')[1],
+                issue_number: {{
+                  github.event.pull_request.number
+                }},
+                body: '⚠️ **Duplicate detected**: This sequence already exists in the database as:\\n' +
+                  (matchResult.matchType === 'exact' ? `- Exact match with ${matchResult.entry.oeis}` :
+                   matchResult.matchType === 'translate' ? `- Translated match (offset ${matchResult.offset}) with ${matchResult.entry.oeis}` :
+                   matchResult.matchType === 'scale' ? `- Scaled match (scale ${matchResult.scale}) with ${matchResult.entry.oeis}` :
+                   '- Unknown match type') + '\\n\\nThe PR will not be merged.'
+              });
+              process.exit(1);
+            }
+
+            // Recompute slope and determine storage format (same logic as submission)
+            const { slope: computedSlope } = fitLinearRegression(seq);
+            let slopeValue, slopeType;
+            const userSlope = payload.userSlope;
+            if (userSlope !== '') {
+              const parts = userSlope.split('/');
+              if (parts.length === 2) {
+                const p = parseInt(parts[0]);
+                const q = parseInt(parts[1]);
+                if (!isNaN(p) && !isNaN(q) && q !== 0) {
+                  const rational = p / q;
+                  if (Math.abs(computedSlope - rational) <= 0.1 * Math.abs(computedSlope)) {
+                    slopeValue = userSlope; // keep as string \"p/q\"
+                    slopeType = 'userRational';
+                  } else {
+                    slopeValue = computedSlope;
+                    slopeType = 'computedIrrational';
+                  }
+                } else {
+                  const userSlopeNum = parseFloat(userSlope);
+                  if (!isNaN(userSlopeNum)) {
+                    slopeValue = userSlopeNum;
+                    slopeType = 'userFloat';
+                  } else {
+                    slopeValue = computedSlope;
+                    slopeType = 'computedIrrational';
+                  }
+                }
+              } else {
+                const userSlopeNum = parseFloat(userSlope);
+                if (!isNaN(userSlopeNum)) {
+                  slopeValue = userSlopeNum;
+                  slopeType = 'userFloat';
+                } else {
+                  slopeValue = computedSlope;
+                  slopeType = 'computedIrrational';
+                }
+              }
+            } else {
+              slopeValue = computedSlope;
+              slopeType = 'computedIrrational';
+            }
+
+            console.log('Final validation passed.');
+            console.log('Params: j=${j}, x=${x}, y=${y}, z=${z}');
+            console.log('Slope value:', slopeValue, 'type:', slopeType);
+
+            // Write back the validated data with slope determination
+            const validatedData = {
+              ...payload,
+              validated: true,
+              j, x, y, z,
+              isBeatty: Math.abs(y - z) === 1 && x <= z && y > 1,
+              computedSlope,
+              slopeValue,
+              slopeType
+            };
+            fs.writeFileSync('validated-sequence.json', JSON.stringify(validatedData, null, 2));
+          "
+
+      - name: Update database
+        if: steps.validate.outcome == 'success'
+        run: |
+          # Read the validated sequence data
+          node -e "
+            const fs = require('fs');
+            const indexHtml = fs.readFileSync('./index.html', 'utf8');
+            const payload = JSON.parse(fs.readFileSync('validated-sequence.json', 'utf8'));
+
+            // Build the database entry object conditionally
+            let entry = '{';
+            const addField = (key, value) => {
+              if (value === undefined) return false;
+              if (typeof value === 'string' && value === '') return false;
+              return true;
+            };
+
+            if (addField('oeis', payload.oeisId)) {
+              entry += 'oeis: \\\"' + payload.oeisId + '\\\", ';
+            }
+            entry += 'j: ' + payload.j + ', ';
+            entry += 'x: ' + payload.x + ', ';
+            entry += 'y: ' + payload.y + ', ';
+            entry += 'z: ' + payload.z + ', ';
+
+            if (addField('name', payload.name)) {
+              entry += 'name: \\\"' + payload.name + '\\\", ';
+            } else {
+              entry += 'name: \\\"Unnamed sequence\\\", ';
+            }
+
+            entry += 'beatty: ' + payload.isBeatty + ', ';
+
+            if (addField('formula', payload.formula)) {
+              entry += 'formula: \\\"' + payload.formula + '\\\", ';
+            }
+
+            // Slope: we always have slopeValue and slopeType from validation
+            if (payload.slopeType === 'userRational') {
+              entry += 'slope: \\\"' + payload.slopeValue + '\\\", ';
+            } else {
+              entry += 'slope: ' + parseFloat(payload.slopeValue) + ', ';
+            }
+
+            if (addField('description', payload.description)) {
+              entry += 'description: \\\"' + payload.description + '\\\", ';
+            }
+            if (addField('morphism', payload.morphism)) {
+              entry += 'morphism: \\\"' + payload.morphism + '\\\", ';
+            }
+            if (addField('boundLow', payload.boundLow)) {
+              entry += 'boundLow: ' + (parseFloat(payload.boundLow) || 0) + ', ';
+            }
+            if (addField('boundHigh', payload.boundHigh)) {
+              entry += 'boundHigh: ' + (parseFloat(payload.boundHigh) || 0) + ', ';
+            }
+            if (addField('notes', payload.notes)) {
+              entry += 'notes: \\\"' + payload.notes + '\\\", ';
+            }
+
+            // Remove trailing comma and space, close object
+            entry = entry.replace(/,\\\\s*$/, '') + '}';
+
+            // Find the seqDatabase array and add the entry
+            // Look for the line that ends with ]; (end of array)
+            const lines = indexHtml.split('\\\\n');
+            let databaseStart = -1;
+            let databaseEnd = -1;
+
+            for (let i = 0; i < lines.length; i++) {
+              if (lines[i].includes('const seqDatabase = [')) {
+                databaseStart = i;
+              }
+              if (databaseStart !== -1 && lines[i].includes('];')) {
+                databaseEnd = i;
+                break;
+              }
+            }
+
+            if (databaseStart === -1 || databaseEnd === -1) {
+              console.error('Could not find seqDatabase array in index.html');
+              process.exit(1);
+            }
+
+            // Insert the new entry before the closing ];
+            lines.splice(databaseEnd, 0, '  ' + entry + ',');
+
+            // Write back the file
+            const newIndexHtml = lines.join('\\\\n');
+            fs.writeFileSync('./index.html', newIndexHtml);
+            console.log('Added sequence to database at position', databaseEnd);
+          "
+
+      - name: Commit changes
+        if: steps.validate.outcome == 'success'
+        run: |
+          git config user.name \"github-actions[bot]\"
+          git config user.email \"41898282+github-actions[bot]@users.noreply.github.com\"
+          git add index.html
+          git commit -m \"Add new hiccup sequence: (j=${{ steps.extract.outputs.j }}, x=${{ steps.extract.outputs.x }}, y=${{ steps.extract.outputs.y }}, z=${{ steps.extract.outputs.z }}) [skip ci]\" || echo \"No changes to commit\"
+          git push origin HEAD:${{ github.ref }}
+
+      - name: Comment on PR
+        if: steps.validate.outcome == 'success'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const pr_number = ${{ github.event.pull_request.number }};
+            github.rest.issues.createComment({
+              issue_number: pr_number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ **Sequence approved and added to database!**\\n\\nThe sequence has been validated and added to the hiccup sequences database. It will now appear in searches and reference tables.\\n\\n*The pull request will be closed automatically.*'
+            });
+
+      - name: Close PR
+        if: steps.validate.outcome == 'success'
+        run: |
+          gh pr close ${{ github.event.pull_request.number }} --repo ${{ github.repository }}
+
+      - name: Comment on failure
+        if: steps.validate.outcome != 'success'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const pr_number = ${{ github.event.pull_request.number }};
+            github.rest.issues.createComment({
+              issue_number: pr_number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '❌ **Sequence not added to database**\\n\\nThe sequence failed final validation checks. Please review the error messages above and resubmit if necessary.'
+            });
+
+      - name: Clean up
+        if: always()
+        run: |
+          # Remove the temporary markdown file
+          MARKDOWN_FILE=$(ls pending-sequences/*.md 2>/dev/null | head -1 || echo \"not found\")
+          if [ \"$MARKDOWN_FILE\" != \"not found\" ]; then
+            git rm $MARKDOWN_FILE
+            git config user.name \"github-actions[bot]\"
+            git config user.email \"41898282+github-actions[bot]@users.noreply.github.com\"
+            git commit -m \"Remove processed sequence preview [skip ci]\" || echo \"No cleanup needed\"
+            git push origin HEAD:${{ github.ref }} || echo \"Push failed, continuing\"
+          fi
