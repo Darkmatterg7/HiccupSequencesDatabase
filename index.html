@@ -3361,38 +3361,38 @@ function generateSequenceMarkdown(payload) {
   const { seq, j, x, y, z, matchResult, isBeatty, userSlope, computedSlope, slopeValue, slopeType, oeisId, name, formula, description, morphism, boundLow, boundHigh, notes } = payload;
   let md = '';
   md += '**New hiccup sequence submission**\n\n';
-  md += `- Parameters: (${j},${x},${y},${z})\n`;
-  md += `- Sequence: ${seq.join(', ')}\n\n`;
+  md += '- Parameters: (' + j + ',' + x + ',' + y + ',' + z + ')\n';
+  md += '- Sequence: ' + seq.join(', ') + '\n\n';
   md += '**🔍 AUTOMATED VALIDATION** ✅\n';
-  md += `- Valid (${j},${x},${y},${z})-hiccup sequence: YES\n`;
-  md += `- Beatty sequence candidate: ${isBeatty ? 'YES' : 'NO'} (|y−z|=1 ∧ x≤z ∧ y>1)\n\n`;
-  md += '**📚 DATABASE CHECK** ${matchResult ? '🔁' : '🆕'}\n';
+  md += '- Valid (' + j + ',' + x + ',' + y + ',' + z + ')-hiccup sequence: YES\n';
+  md += '- Beatty sequence candidate: ' + (isBeatty ? 'YES' : 'NO') + ' (|y−z|=1 ∧ x≤z ∧ y>1)\n\n';
+  md += '**📚 DATABASE CHECK** ' + (matchResult ? '🔁' : '🆕') + '\n';
   if (matchResult) {
-    md += `- Match type: ${matchResult.matchType}\n`;
+    md += '- Match type: ' + matchResult.matchType + '\n';
     if (matchResult.matchType === 'exact') {
-      md += `- Exact match with ${matchResult.entry.oeis}\n`;
+      md += '- Exact match with ' + matchResult.entry.oeis + '\n';
     } else if (matchResult.matchType === 'translate') {
-      md += `- Translated match (offset ${matchResult.offset}) with ${matchResult.entry.oeis}\n`;
+      md += '- Translated match (offset ' + matchResult.offset + ') with ' + matchResult.entry.oeis + '\n';
     } else if (matchResult.matchType === 'scale') {
-      md += `- Scaled match (scale ${matchResult.scale}) with ${matchResult.entry.oeis}\n`;
+      md += '- Scaled match (scale ' + matchResult.scale + ') with ' + matchResult.entry.oeis + '\n';
     }
   } else {
-    md += `- No match found in database\n`;
+    md += '- No match found in database\n';
   }
   md += '\n**📐 SLOPE ASSESSMENT**\n';
-  md += `- User-provided slope: ${userSlope || '(not provided)'}\n`;
-  md += `- Computed linear regression slope: ${computedSlope.toFixed(4)}\n`;
-  md += `- Slope classification: ${slopeType}\n`;
-  md += `- Slope to store: ${slopeValue instanceof Array ? JSON.stringify(slopeValue) : (typeof slopeValue === 'string' ? slopeValue : slopeValue.toString())}\n\n`;
+  md += '- User-provided slope: ' + (userSlope || '(not provided)') + '\n';
+  md += '- Computed linear regression slope: ' + computedSlope.toFixed(4) + '\n';
+  md += '- Slope classification: ' + slopeType + '\n';
+  md += '- Slope to store: ' + (slopeValue instanceof Array ? JSON.stringify(slopeValue) : (typeof slopeValue === 'string' ? slopeValue : slopeValue.toString())) + '\n\n';
   md += '**📝 OPTIONAL FIELDS**\n';
-  md += `- OEIS ID: ${oeisId || '(not provided)'}\n`;
-  md += `- Name / properties: ${name || '(not provided)'}\n`;
-  md += `- Closed‑form formula: ${formula || '(not provided)'}\n`;
-  md += `- Description: ${description || '(not provided)'}\n`;
-  md += `- Generating morphism: ${morphism || '(not provided)'}\n`;
-  md += `- Bounds low: ${boundLow || '(not provided)'}\n`;
-  md += `- Bounds high: ${boundHigh || '(not provided)'}\n`;
-  md += `- Notes: ${notes || '(not provided)'}\n\n`;
+  md += '- OEIS ID: ' + (oeisId || '(not provided)') + '\n';
+  md += '- Name / properties: ' + (name || '(not provided)') + '\n';
+  md += '- Closed‑form formula: ' + (formula || '(not provided)') + '\n';
+  md += '- Description: ' + (description || '(not provided)') + '\n';
+  md += '- Generating morphism: ' + (morphism || '(not provided)') + '\n';
+  md += '- Bounds low: ' + (boundLow || '(not provided)') + '\n';
+  md += '- Bounds high: ' + (boundHigh || '(not provided)') + '\n';
+  md += '- Notes: ' + (notes || '(not provided)') + '\n\n';
   md += '**✅ MODERATOR ACTION**\n';
   md += 'Please review the above information. If everything looks correct, approve the linked pull request to add this sequence to the database.\n';
   md += 'If you wish to omit any field, edit this markdown file and remove the corresponding line before approving.\n\n';
@@ -3403,7 +3403,6 @@ function generateSequenceMarkdown(payload) {
   md += '\n```\n';
   return md;
 }
-
   </script>
 <dialog id="submission-modal" aria-labelledby="submission-title">
   <div class="modal-header">
